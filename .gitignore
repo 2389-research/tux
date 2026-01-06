@@ -1,5 +1,6 @@
 # Binaries
-minimal
+/minimal
+examples/minimal/minimal
 *.exe
 *.exe~
 *.dll
