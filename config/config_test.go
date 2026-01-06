@@ -696,3 +696,123 @@ func TestValidateAllColorFields(t *testing.T) {
 		t.Errorf("all valid colors should pass, got errors: %v", errs)
 	}
 }
+
+func TestBuildThemeDefault(t *testing.T) {
+	cfg := Default()
+	theme := cfg.BuildTheme()
+
+	if theme.Name() != "dracula" {
+		t.Errorf("expected theme name 'dracula', got %s", theme.Name())
+	}
+}
+
+func TestBuildThemeNord(t *testing.T) {
+	cfg := Default()
+	cfg.Theme.Name = "nord"
+	theme := cfg.BuildTheme()
+
+	if theme.Name() != "nord" {
+		t.Errorf("expected theme name 'nord', got %s", theme.Name())
+	}
+}
+
+func TestBuildThemeWithOverrides(t *testing.T) {
+	cfg := Default()
+	cfg.Theme.Colors.Primary = "#ff0000"
+	cfg.Theme.Colors.Background = "#000000"
+
+	theme := cfg.BuildTheme()
+
+	// Should be custom theme
+	if theme.Name() != "dracula-custom" {
+		t.Errorf("expected custom theme name, got %s", theme.Name())
+	}
+
+	// Custom colors should be applied
+	if string(theme.Primary()) != "#ff0000" {
+		t.Errorf("expected primary #ff0000, got %s", theme.Primary())
+	}
+	if string(theme.Background()) != "#000000" {
+		t.Errorf("expected background #000000, got %s", theme.Background())
+	}
+
+	// Non-overridden colors should come from base theme
+	if theme.Success() == "" {
+		t.Error("success color should fall back to base theme")
+	}
+}
+
+func TestBuildThemeAllOverrides(t *testing.T) {
+	cfg := Default()
+	cfg.Theme.Colors = ColorsConfig{
+		Primary:       "#111111",
+		Secondary:     "#222222",
+		Background:    "#333333",
+		Foreground:    "#444444",
+		Success:       "#555555",
+		Warning:       "#666666",
+		Error:         "#777777",
+		Info:          "#888888",
+		Border:        "#999999",
+		BorderFocused: "#aaaaaa",
+		Muted:         "#bbbbbb",
+		User:          "#cccccc",
+		Assistant:     "#dddddd",
+		Tool:          "#eeeeee",
+		System:        "#ffffff",
+	}
+
+	theme := cfg.BuildTheme()
+
+	if string(theme.Primary()) != "#111111" {
+		t.Errorf("expected primary #111111, got %s", theme.Primary())
+	}
+	if string(theme.Secondary()) != "#222222" {
+		t.Errorf("expected secondary #222222, got %s", theme.Secondary())
+	}
+	if string(theme.Background()) != "#333333" {
+		t.Errorf("expected background #333333, got %s", theme.Background())
+	}
+	if string(theme.Foreground()) != "#444444" {
+		t.Errorf("expected foreground #444444, got %s", theme.Foreground())
+	}
+	if string(theme.Success()) != "#555555" {
+		t.Errorf("expected success #555555, got %s", theme.Success())
+	}
+	if string(theme.Warning()) != "#666666" {
+		t.Errorf("expected warning #666666, got %s", theme.Warning())
+	}
+	if string(theme.Error()) != "#777777" {
+		t.Errorf("expected error #777777, got %s", theme.Error())
+	}
+	if string(theme.Info()) != "#888888" {
+		t.Errorf("expected info #888888, got %s", theme.Info())
+	}
+	if string(theme.Border()) != "#999999" {
+		t.Errorf("expected border #999999, got %s", theme.Border())
+	}
+	if string(theme.BorderFocused()) != "#aaaaaa" {
+		t.Errorf("expected border_focused #aaaaaa, got %s", theme.BorderFocused())
+	}
+	if string(theme.Muted()) != "#bbbbbb" {
+		t.Errorf("expected muted #bbbbbb, got %s", theme.Muted())
+	}
+	if string(theme.UserColor()) != "#cccccc" {
+		t.Errorf("expected user #cccccc, got %s", theme.UserColor())
+	}
+	if string(theme.AssistantColor()) != "#dddddd" {
+		t.Errorf("expected assistant #dddddd, got %s", theme.AssistantColor())
+	}
+	if string(theme.ToolColor()) != "#eeeeee" {
+		t.Errorf("expected tool #eeeeee, got %s", theme.ToolColor())
+	}
+	if string(theme.SystemColor()) != "#ffffff" {
+		t.Errorf("expected system #ffffff, got %s", theme.SystemColor())
+	}
+
+	// Styles should still work
+	styles := theme.Styles()
+	if styles.Title.GetBold() != true {
+		t.Error("styles should be available from base theme")
+	}
+}

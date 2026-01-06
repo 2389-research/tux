@@ -4,19 +4,29 @@ package main
 import (
 	"log"
 
+	"github.com/2389-research/tux/config"
 	"github.com/2389-research/tux/content"
 	"github.com/2389-research/tux/shell"
-	"github.com/2389-research/tux/theme"
 )
 
 func main() {
-	// Create shell with dracula theme
-	th := theme.NewDraculaTheme()
-	cfg := shell.DefaultConfig()
-	cfg.InputPrefix = "λ "
-	cfg.InputPlaceholder = "Type a message..."
+	// Load configuration (looks for ~/.config/tux/config.toml or TUX_CONFIG env var)
+	// Falls back to defaults if no config file exists
+	cfg, err := config.Load("tux")
+	if err != nil {
+		log.Printf("Warning: could not load config: %v (using defaults)", err)
+		cfg = config.Default()
+	}
 
-	s := shell.New(th, cfg)
+	// Build theme from config (supports base themes + color overrides)
+	th := cfg.BuildTheme()
+
+	// Create shell config from loaded settings
+	shellCfg := shell.DefaultConfig()
+	shellCfg.InputPrefix = cfg.Input.Prefix
+	shellCfg.InputPlaceholder = cfg.Input.Placeholder
+
+	s := shell.New(th, shellCfg)
 
 	// Add a chat tab with some content
 	chatContent := content.NewSelectList([]content.SelectItem{

@@ -137,3 +137,142 @@ func TestDraculaColorValues(t *testing.T) {
 		t.Errorf("expected error #ff5555 (red), got %s", theme.Error())
 	}
 }
+
+func TestNordTheme(t *testing.T) {
+	theme := NewNordTheme()
+
+	if theme.Name() != "nord" {
+		t.Errorf("expected name 'nord', got %s", theme.Name())
+	}
+
+	// Verify Nord colors
+	if theme.Background() != "#2e3440" {
+		t.Errorf("expected background #2e3440, got %s", theme.Background())
+	}
+	if theme.Primary() != "#88c0d0" {
+		t.Errorf("expected primary #88c0d0, got %s", theme.Primary())
+	}
+
+	// Verify styles
+	styles := theme.Styles()
+	if !styles.Title.GetBold() {
+		t.Error("title style should be bold")
+	}
+}
+
+func TestGruvboxTheme(t *testing.T) {
+	theme := NewGruvboxTheme()
+
+	if theme.Name() != "gruvbox" {
+		t.Errorf("expected name 'gruvbox', got %s", theme.Name())
+	}
+
+	// Verify Gruvbox colors
+	if theme.Background() != "#282828" {
+		t.Errorf("expected background #282828, got %s", theme.Background())
+	}
+	if theme.Primary() != "#fabd2f" {
+		t.Errorf("expected primary #fabd2f, got %s", theme.Primary())
+	}
+
+	// Verify styles
+	styles := theme.Styles()
+	if !styles.Title.GetBold() {
+		t.Error("title style should be bold")
+	}
+}
+
+func TestHighContrastTheme(t *testing.T) {
+	theme := NewHighContrastTheme()
+
+	if theme.Name() != "high-contrast" {
+		t.Errorf("expected name 'high-contrast', got %s", theme.Name())
+	}
+
+	// Verify high contrast colors
+	if theme.Background() != "#000000" {
+		t.Errorf("expected background #000000, got %s", theme.Background())
+	}
+	if theme.Foreground() != "#ffffff" {
+		t.Errorf("expected foreground #ffffff, got %s", theme.Foreground())
+	}
+	if theme.Primary() != "#ffff00" {
+		t.Errorf("expected primary #ffff00, got %s", theme.Primary())
+	}
+
+	// Verify styles
+	styles := theme.Styles()
+	if !styles.Title.GetBold() {
+		t.Error("title style should be bold")
+	}
+}
+
+func TestGetAllThemes(t *testing.T) {
+	themes := []string{"dracula", "nord", "gruvbox", "high-contrast"}
+
+	for _, name := range themes {
+		theme := Get(name)
+		if theme.Name() != name {
+			t.Errorf("Get(%q) returned theme with name %q", name, theme.Name())
+		}
+	}
+}
+
+func TestAllThemesHaveAllColors(t *testing.T) {
+	themes := []Theme{
+		NewDraculaTheme(),
+		NewNordTheme(),
+		NewGruvboxTheme(),
+		NewHighContrastTheme(),
+	}
+
+	for _, theme := range themes {
+		t.Run(theme.Name(), func(t *testing.T) {
+			if theme.Background() == "" {
+				t.Error("Background not set")
+			}
+			if theme.Foreground() == "" {
+				t.Error("Foreground not set")
+			}
+			if theme.Primary() == "" {
+				t.Error("Primary not set")
+			}
+			if theme.Secondary() == "" {
+				t.Error("Secondary not set")
+			}
+			if theme.Success() == "" {
+				t.Error("Success not set")
+			}
+			if theme.Warning() == "" {
+				t.Error("Warning not set")
+			}
+			if theme.Error() == "" {
+				t.Error("Error not set")
+			}
+			if theme.Info() == "" {
+				t.Error("Info not set")
+			}
+			if theme.Border() == "" {
+				t.Error("Border not set")
+			}
+			if theme.BorderFocused() == "" {
+				t.Error("BorderFocused not set")
+			}
+			if theme.Muted() == "" {
+				t.Error("Muted not set")
+			}
+			if theme.UserColor() == "" {
+				t.Error("UserColor not set")
+			}
+			if theme.AssistantColor() == "" {
+				t.Error("AssistantColor not set")
+			}
+			if theme.ToolColor() == "" {
+				t.Error("ToolColor not set")
+			}
+			if theme.SystemColor() == "" {
+				t.Error("SystemColor not set")
+			}
+		})
+	}
+}
