@@ -208,7 +208,7 @@ func TestHighContrastTheme(t *testing.T) {
 }
 
 func TestGetAllThemes(t *testing.T) {
-	themes := []string{"dracula", "nord", "gruvbox", "high-contrast"}
+	themes := []string{"dracula", "nord", "gruvbox", "high-contrast", "neo-terminal"}
 
 	for _, name := range themes {
 		theme := Get(name)
@@ -218,12 +218,41 @@ func TestGetAllThemes(t *testing.T) {
 	}
 }
 
+func TestNeoTerminalTheme(t *testing.T) {
+	theme := NewNeoTerminalTheme()
+
+	if theme.Name() != "neo-terminal" {
+		t.Errorf("expected name 'neo-terminal', got %s", theme.Name())
+	}
+
+	// Verify Neo-Terminal colors
+	if theme.Background() != "#1a1b26" {
+		t.Errorf("expected background #1a1b26, got %s", theme.Background())
+	}
+	if theme.Primary() != "#7aa2f7" {
+		t.Errorf("expected primary #7aa2f7, got %s", theme.Primary())
+	}
+	if theme.UserColor() != "#ff9e64" {
+		t.Errorf("expected user color #ff9e64, got %s", theme.UserColor())
+	}
+	if theme.AssistantColor() != "#9ece6a" {
+		t.Errorf("expected assistant color #9ece6a, got %s", theme.AssistantColor())
+	}
+
+	// Verify styles
+	styles := theme.Styles()
+	if !styles.Title.GetBold() {
+		t.Error("title style should be bold")
+	}
+}
+
 func TestAllThemesHaveAllColors(t *testing.T) {
 	themes := []Theme{
 		NewDraculaTheme(),
 		NewNordTheme(),
 		NewGruvboxTheme(),
 		NewHighContrastTheme(),
+		NewNeoTerminalTheme(),
 	}
 
 	for _, theme := range themes {
