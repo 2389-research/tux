@@ -84,3 +84,56 @@ func TestRegister(t *testing.T) {
 		t.Error("registered theme not in available themes")
 	}
 }
+
+func TestDraculaAllColors(t *testing.T) {
+	theme := NewDraculaTheme()
+
+	// Test all color getters return non-empty values
+	tests := []struct {
+		name  string
+		color func() string
+	}{
+		{"Background", func() string { return string(theme.Background()) }},
+		{"Foreground", func() string { return string(theme.Foreground()) }},
+		{"Primary", func() string { return string(theme.Primary()) }},
+		{"Secondary", func() string { return string(theme.Secondary()) }},
+		{"Success", func() string { return string(theme.Success()) }},
+		{"Warning", func() string { return string(theme.Warning()) }},
+		{"Error", func() string { return string(theme.Error()) }},
+		{"Info", func() string { return string(theme.Info()) }},
+		{"Border", func() string { return string(theme.Border()) }},
+		{"BorderFocused", func() string { return string(theme.BorderFocused()) }},
+		{"Muted", func() string { return string(theme.Muted()) }},
+		{"UserColor", func() string { return string(theme.UserColor()) }},
+		{"AssistantColor", func() string { return string(theme.AssistantColor()) }},
+		{"ToolColor", func() string { return string(theme.ToolColor()) }},
+		{"SystemColor", func() string { return string(theme.SystemColor()) }},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			color := tt.color()
+			if color == "" {
+				t.Errorf("%s color should not be empty", tt.name)
+			}
+		})
+	}
+}
+
+func TestDraculaColorValues(t *testing.T) {
+	theme := NewDraculaTheme()
+
+	// Verify specific Dracula colors
+	if theme.Background() != "#282a36" {
+		t.Errorf("expected background #282a36, got %s", theme.Background())
+	}
+	if theme.Primary() != "#bd93f9" {
+		t.Errorf("expected primary #bd93f9 (purple), got %s", theme.Primary())
+	}
+	if theme.Success() != "#50fa7b" {
+		t.Errorf("expected success #50fa7b (green), got %s", theme.Success())
+	}
+	if theme.Error() != "#ff5555" {
+		t.Errorf("expected error #ff5555 (red), got %s", theme.Error())
+	}
+}

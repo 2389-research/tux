@@ -1,6 +1,7 @@
 package agent
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -221,5 +222,101 @@ func TestMessage(t *testing.T) {
 
 	if len(msg.ContentBlocks) != 2 {
 		t.Errorf("expected 2 blocks, got %d", len(msg.ContentBlocks))
+	}
+}
+
+func TestToolQueuePendingCount(t *testing.T) {
+	tools := []ToolInfo{
+		{ID: "1", Name: "A"},
+		{ID: "2", Name: "B"},
+		{ID: "3", Name: "C"},
+	}
+	q := NewQueue(tools, nil)
+
+	if q.PendingCount() != 3 {
+		t.Errorf("expected 3 pending, got %d", q.PendingCount())
+	}
+
+	q.SetOutcome(OutcomeApproved, nil)
+	q.Advance()
+
+	if q.PendingCount() != 2 {
+		t.Errorf("expected 2 pending, got %d", q.PendingCount())
+	}
+}
+
+func TestToolQueueItems(t *testing.T) {
+	tools := []ToolInfo{
+		{ID: "1", Name: "A"},
+		{ID: "2", Name: "B"},
+	}
+	q := NewQueue(tools, nil)
+
+	items := q.Items()
+	if len(items) != 2 {
+		t.Errorf("expected 2 items, got %d", len(items))
+	}
+	if items[0].Tool.Name != "A" {
+		t.Errorf("expected first item name 'A', got %s", items[0].Tool.Name)
+	}
+}
+
+func TestDefaultClassifier(t *testing.T) {
+	tool := ToolInfo{ID: "1", Name: "Test", Risk: RiskHigh}
+	action, reason := DefaultClassifier(tool)
+
+	if action != ActionNeedsApproval {
+		t.Error("DefaultClassifier should always return ActionNeedsApproval")
+	}
+	if reason != "" {
+		t.Error("DefaultClassifier should return empty reason")
+	}
+}
+
+func TestNewErrorEvent(t *testing.T) {
+	err := errors.New("test error")
+	e := NewErrorEvent(err)
+
+	if e.Type != EventError {
+		t.Error("type should be EventError")
+	}
+	if e.Error != err {
+		t.Error("error should be set")
+	}
+}
+
+func TestProgressHintEmpty(t *testing.T) {
+	q := NewQueue(nil, nil)
+	hint := q.ProgressHint()
+	if hint != "" {
+		t.Errorf("expected empty hint for empty queue, got %s", hint)
+	}
+}
+
+func TestProgressHintAllStates(t *testing.T) {
+	tools := []ToolInfo{
+		{ID: "1", Name: "A"},
+		{ID: "2", Name: "B"},
+		{ID: "3", Name: "C"},
+		{ID: "4", Name: "D"},
+	}
+	q := NewQueue(tools, nil)
+
+	// Set first to approved
+	q.SetOutcome(OutcomeApproved, nil)
+	q.Advance()
+
+	// Set second to denied
+	q.SetOutcome(OutcomeDenied, nil)
+	q.Advance()
+
+	// Set third to error
+	q.SetOutcome(OutcomeError, nil)
+	q.Advance()
+
+	// Fourth is current (pending)
+	hint := q.ProgressHint()
+	if hint != "[✓✗✗●]" {
+		t.Errorf("expected [✓✗✗●], got %s", hint)
 	}
 }

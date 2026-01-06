@@ -180,3 +180,72 @@ func containsHelper(s, substr string) bool {
 	}
 	return false
 }
+
+func TestSelectListSetSize(t *testing.T) {
+	list := NewSelectList([]SelectItem{
+		{Label: "A", Value: "a"},
+		{Label: "B", Value: "b"},
+	})
+
+	// SetSize should not panic
+	list.SetSize(100, 50)
+	// Verify view still works after resize
+	view := list.View()
+	if view == "" {
+		t.Error("View should work after SetSize")
+	}
+}
+
+func TestSelectListSelectedItem(t *testing.T) {
+	items := []SelectItem{
+		{Label: "A", Value: "a", Description: "First"},
+		{Label: "B", Value: "b", Description: "Second"},
+	}
+	list := NewSelectList(items)
+
+	item := list.SelectedItem()
+	if item == nil {
+		t.Error("SelectedItem should not return nil")
+	}
+	if item.Label != "A" {
+		t.Errorf("expected label 'A', got %s", item.Label)
+	}
+
+	list.SetSelected(1)
+	item = list.SelectedItem()
+	if item.Label != "B" {
+		t.Errorf("expected label 'B', got %s", item.Label)
+	}
+}
+
+func TestSelectListSelectedItemEmpty(t *testing.T) {
+	list := NewSelectList(nil)
+	item := list.SelectedItem()
+	if item != nil {
+		t.Error("SelectedItem should return nil for empty list")
+	}
+}
+
+func TestSelectListItems(t *testing.T) {
+	items := []SelectItem{
+		{Label: "A", Value: "a"},
+		{Label: "B", Value: "b"},
+	}
+	list := NewSelectList(items)
+
+	retrieved := list.Items()
+	if len(retrieved) != 2 {
+		t.Errorf("expected 2 items, got %d", len(retrieved))
+	}
+	if retrieved[0].Label != "A" {
+		t.Errorf("expected first item label 'A', got %s", retrieved[0].Label)
+	}
+}
+
+func TestSelectListInit(t *testing.T) {
+	list := NewSelectList(nil)
+	cmd := list.Init()
+	if cmd != nil {
+		t.Error("Init should return nil")
+	}
+}
