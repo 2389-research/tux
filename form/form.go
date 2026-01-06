@@ -197,6 +197,7 @@ func (f *Form) HandleKey(key tea.KeyMsg) bool {
 				}
 			} else {
 				// Next group
+				fields[f.focusedIndex].Blur()
 				f.currentGroup++
 				f.focusedIndex = 0
 				if newFields := f.currentFields(); len(newFields) > 0 {
@@ -206,9 +207,11 @@ func (f *Form) HandleKey(key tea.KeyMsg) bool {
 			return true
 		}
 		// Move to next field
-		fields[f.focusedIndex].Blur()
-		f.focusedIndex++
-		fields[f.focusedIndex].Focus()
+		if len(fields) > 0 {
+			fields[f.focusedIndex].Blur()
+			f.focusedIndex++
+			fields[f.focusedIndex].Focus()
+		}
 		return true
 	}
 
