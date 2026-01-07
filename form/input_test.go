@@ -4,6 +4,7 @@ package form
 import (
 	"testing"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/2389-research/tux/theme"
 )
 
@@ -80,4 +81,22 @@ func TestInputFieldFocus(t *testing.T) {
 	if f.Focused() {
 		t.Error("should not be focused after Blur()")
 	}
+}
+
+func TestInputFieldHandleKey(t *testing.T) {
+	f := NewInput().WithID("test").WithLabel("Input")
+
+	// HandleKey should return false when huhField is nil
+	key := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}}
+	if f.HandleKey(key) {
+		t.Error("should return false when huhField is nil")
+	}
+
+	// Initialize the huh field via Render
+	th := theme.Get("dracula")
+	f.Render(40, th, true)
+
+	// Now HandleKey should work (may or may not return true depending on key)
+	// Just verify it doesn't panic
+	f.HandleKey(key)
 }

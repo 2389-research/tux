@@ -38,3 +38,31 @@ func TestValuesAccessors(t *testing.T) {
 		t.Errorf("expected [a, b], got %v", strs)
 	}
 }
+
+func TestValuesInt(t *testing.T) {
+	v := Values{
+		"count":       42,
+		"wrongType":   "not an int",
+		"anotherType": true,
+	}
+
+	// Valid int value
+	if v.Int("count") != 42 {
+		t.Errorf("expected 42, got %d", v.Int("count"))
+	}
+
+	// Missing key should return 0
+	if v.Int("missing") != 0 {
+		t.Errorf("missing key should return 0, got %d", v.Int("missing"))
+	}
+
+	// Wrong type should return 0
+	if v.Int("wrongType") != 0 {
+		t.Errorf("wrong type should return 0, got %d", v.Int("wrongType"))
+	}
+
+	// Another wrong type should return 0
+	if v.Int("anotherType") != 0 {
+		t.Errorf("another wrong type should return 0, got %d", v.Int("anotherType"))
+	}
+}

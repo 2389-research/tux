@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/2389-research/tux/theme"
 )
 
@@ -50,5 +51,72 @@ func TestNoteFieldNoValidation(t *testing.T) {
 
 	if f.Validate() != nil {
 		t.Error("note should never fail validation")
+	}
+}
+
+func TestNoteFieldLabel(t *testing.T) {
+	f := NewNote().WithID("test").WithTitle("My Title")
+	// Note: Label() returns the title for NoteField
+	if f.Label() != "My Title" {
+		t.Errorf("expected 'My Title', got %s", f.Label())
+	}
+}
+
+func TestNoteFieldSetValue(t *testing.T) {
+	f := NewNote().WithID("test")
+
+	// SetValue should do nothing for notes (display-only)
+	f.SetValue("anything")
+
+	// Value should still be nil
+	if f.Value() != nil {
+		t.Error("note value should remain nil after SetValue")
+	}
+}
+
+func TestNoteFieldFocusBlur(t *testing.T) {
+	f := NewNote().WithID("test")
+
+	// Initially not focused
+	if f.Focused() {
+		t.Error("should not be focused initially")
+	}
+
+	// Focus sets focused flag
+	f.Focus()
+	if !f.Focused() {
+		t.Error("should be focused after Focus()")
+	}
+
+	// Blur clears focused flag
+	f.Blur()
+	if f.Focused() {
+		t.Error("should not be focused after Blur()")
+	}
+}
+
+func TestNoteFieldInit(t *testing.T) {
+	f := NewNote().WithID("test")
+
+	// Init should return nil for notes
+	cmd := f.Init()
+	if cmd != nil {
+		t.Error("note Init() should return nil")
+	}
+}
+
+func TestNoteFieldHandleKey(t *testing.T) {
+	f := NewNote().WithID("test")
+
+	// HandleKey should always return false for notes (display-only)
+	key := tea.KeyMsg{Type: tea.KeySpace}
+	if f.HandleKey(key) {
+		t.Error("note HandleKey should always return false")
+	}
+
+	// Try different key types
+	enterKey := tea.KeyMsg{Type: tea.KeyEnter}
+	if f.HandleKey(enterKey) {
+		t.Error("note HandleKey should always return false for enter")
 	}
 }

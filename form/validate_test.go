@@ -113,3 +113,63 @@ func TestComposeValidators(t *testing.T) {
 		t.Error("should pass both validators")
 	}
 }
+
+func TestMinLengthNonString(t *testing.T) {
+	v := MinLength(3)
+
+	// Non-string types should pass (return nil)
+	if v(123) != nil {
+		t.Error("non-string should pass MinLength")
+	}
+	if v(true) != nil {
+		t.Error("bool should pass MinLength")
+	}
+}
+
+func TestMaxLengthNonString(t *testing.T) {
+	v := MaxLength(5)
+
+	// Non-string types should pass (return nil)
+	if v(123) != nil {
+		t.Error("non-string should pass MaxLength")
+	}
+	if v(true) != nil {
+		t.Error("bool should pass MaxLength")
+	}
+}
+
+func TestPatternNonString(t *testing.T) {
+	v := Pattern(`^[a-z]+$`, "lowercase only")
+
+	// Non-string types should pass (return nil)
+	if v(123) != nil {
+		t.Error("non-string should pass Pattern")
+	}
+	if v(true) != nil {
+		t.Error("bool should pass Pattern")
+	}
+}
+
+func TestMinSelectedNonArray(t *testing.T) {
+	v := MinSelected(2)
+
+	// Non-array types should pass (return nil)
+	if v("hello") != nil {
+		t.Error("non-array should pass MinSelected")
+	}
+	if v(123) != nil {
+		t.Error("int should pass MinSelected")
+	}
+}
+
+func TestMaxSelectedNonArray(t *testing.T) {
+	v := MaxSelected(2)
+
+	// Non-array types should pass (return nil)
+	if v("hello") != nil {
+		t.Error("non-array should pass MaxSelected")
+	}
+	if v(123) != nil {
+		t.Error("int should pass MaxSelected")
+	}
+}
