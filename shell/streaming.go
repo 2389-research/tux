@@ -108,3 +108,46 @@ func (s *StreamingController) TokenCount() int {
 func (s *StreamingController) TokenRate() float64 {
 	return s.tokenRate
 }
+
+// SetThinking sets the thinking state.
+func (s *StreamingController) SetThinking(active bool) {
+	s.thinking = active
+	if active {
+		s.lastSpinTime = time.Now()
+	}
+}
+
+// IsThinking returns true if currently in thinking state.
+func (s *StreamingController) IsThinking() bool {
+	return s.thinking
+}
+
+// StartToolCall marks a tool call as started.
+func (s *StreamingController) StartToolCall(id, name string) {
+	s.toolCalls = append(s.toolCalls, ToolCall{
+		ID:         id,
+		Name:       name,
+		InProgress: true,
+	})
+}
+
+// EndToolCall marks a tool call as complete.
+func (s *StreamingController) EndToolCall(id string) {
+	for i := range s.toolCalls {
+		if s.toolCalls[i].ID == id {
+			s.toolCalls[i].InProgress = false
+			break
+		}
+	}
+}
+
+// ActiveToolCalls returns tool calls that are still in progress.
+func (s *StreamingController) ActiveToolCalls() []ToolCall {
+	var active []ToolCall
+	for _, tc := range s.toolCalls {
+		if tc.InProgress {
+			active = append(active, tc)
+		}
+	}
+	return active
+}

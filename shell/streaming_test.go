@@ -62,3 +62,39 @@ func TestStreamingController_Tokens(t *testing.T) {
 		t.Error("expected positive token rate")
 	}
 }
+
+func TestStreamingController_Status(t *testing.T) {
+	s := NewStreamingController()
+	s.Start()
+
+	// Thinking
+	if s.IsThinking() {
+		t.Error("expected not thinking initially")
+	}
+	s.SetThinking(true)
+	if !s.IsThinking() {
+		t.Error("expected thinking after SetThinking(true)")
+	}
+	s.SetThinking(false)
+	if s.IsThinking() {
+		t.Error("expected not thinking after SetThinking(false)")
+	}
+
+	// Tool calls
+	s.StartToolCall("1", "Bash")
+	s.StartToolCall("2", "Read")
+
+	active := s.ActiveToolCalls()
+	if len(active) != 2 {
+		t.Errorf("expected 2 active tool calls, got %d", len(active))
+	}
+
+	s.EndToolCall("1")
+	active = s.ActiveToolCalls()
+	if len(active) != 1 {
+		t.Errorf("expected 1 active tool call, got %d", len(active))
+	}
+	if active[0].Name != "Read" {
+		t.Errorf("expected 'Read', got %q", active[0].Name)
+	}
+}
