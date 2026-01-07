@@ -1,6 +1,7 @@
 package shell
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/2389-research/tux/content"
@@ -735,4 +736,28 @@ func TestShell_Streaming(t *testing.T) {
 	// Can disable streaming status
 	sh.SetStreamingStatusVisible(false)
 	// (visibility tested in statusbar render)
+}
+
+func TestShell_StreamingInView(t *testing.T) {
+	sh := New(nil, DefaultConfig())
+
+	// Simulate window size
+	sh.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+
+	// Start streaming with thinking
+	sh.Streaming().Start()
+	sh.Streaming().AppendToken("test") // Exit waiting state
+	sh.Streaming().SetThinking(true)
+
+	view := sh.View()
+	if !strings.Contains(view, "Thinking") {
+		t.Errorf("expected 'Thinking' in shell view")
+	}
+
+	// Disable streaming status
+	sh.SetStreamingStatusVisible(false)
+	view = sh.View()
+	if strings.Contains(view, "Thinking") {
+		t.Error("expected no 'Thinking' when streaming status disabled")
+	}
 }

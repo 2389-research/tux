@@ -171,6 +171,7 @@ func (s *Shell) View() string {
 
 	// Status bar
 	if s.config.ShowStatusBar {
+		s.statusBar.SetStreamingController(s.streaming, s.streamingStatusVisible)
 		sections = append(sections, s.statusBar.View(s.width))
 	}
 
