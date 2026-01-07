@@ -2,6 +2,7 @@
 package shell
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -96,5 +97,44 @@ func TestStreamingController_Status(t *testing.T) {
 	}
 	if active[0].Name != "Read" {
 		t.Errorf("expected 'Read', got %q", active[0].Name)
+	}
+}
+
+func TestStreamingController_Render(t *testing.T) {
+	s := NewStreamingController()
+
+	// Not streaming - empty render
+	if s.RenderStatus(nil) != "" {
+		t.Error("expected empty status when not streaming")
+	}
+
+	s.Start()
+
+	// Waiting state
+	status := s.RenderStatus(nil)
+	if !strings.Contains(status, "Waiting") {
+		t.Errorf("expected 'Waiting' in status, got %q", status)
+	}
+
+	// After tokens, show rate
+	s.AppendToken("test")
+	s.tokenRate = 42.0 // Force rate for testing
+	status = s.RenderStatus(nil)
+	if !strings.Contains(status, "42") {
+		t.Errorf("expected rate in status, got %q", status)
+	}
+
+	// Thinking shows spinner
+	s.SetThinking(true)
+	status = s.RenderStatus(nil)
+	if !strings.Contains(status, "Thinking") {
+		t.Errorf("expected 'Thinking' in status, got %q", status)
+	}
+
+	// Tool calls shown
+	s.StartToolCall("1", "Bash")
+	status = s.RenderStatus(nil)
+	if !strings.Contains(status, "Bash") {
+		t.Errorf("expected 'Bash' in status, got %q", status)
 	}
 }

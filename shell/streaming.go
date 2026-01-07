@@ -1,7 +1,14 @@
 // shell/streaming.go
 package shell
 
-import "time"
+import (
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/2389-research/tux/theme"
+	"github.com/charmbracelet/lipgloss"
+)
 
 // StreamingController manages streaming state for LLM responses.
 type StreamingController struct {
@@ -150,4 +157,72 @@ func (s *StreamingController) ActiveToolCalls() []ToolCall {
 		}
 	}
 	return active
+}
+
+// RenderStatus renders the streaming status for the statusbar.
+// Returns empty string if not streaming.
+func (s *StreamingController) RenderStatus(th theme.Theme) string {
+	if !s.streaming {
+		return ""
+	}
+
+	var parts []string
+
+	// Waiting state
+	if s.waiting {
+		style := lipgloss.NewStyle().Italic(true)
+		if th != nil {
+			style = style.Foreground(th.Muted())
+		}
+		return style.Render("Waiting...")
+	}
+
+	// Thinking with spinner
+	if s.thinking {
+		frame := s.getSpinnerFrame()
+		style := lipgloss.NewStyle()
+		if th != nil {
+			style = style.Foreground(th.Primary())
+		}
+		parts = append(parts, style.Render(frame+" Thinking"))
+	}
+
+	// Active tool calls
+	for _, tc := range s.toolCalls {
+		if tc.InProgress {
+			style := lipgloss.NewStyle()
+			if th != nil {
+				style = style.Foreground(th.Secondary())
+			}
+			parts = append(parts, style.Render("▍ "+tc.Name))
+		}
+	}
+
+	// Token rate
+	if s.tokenRate > 0 {
+		style := lipgloss.NewStyle()
+		if th != nil {
+			style = style.Foreground(th.Muted())
+		}
+		rate := fmt.Sprintf("▸ %.0f tok/s", s.tokenRate)
+		parts = append(parts, style.Render(rate))
+	}
+
+	return strings.Join(parts, "  ")
+}
+
+// getSpinnerFrame returns the current spinner frame.
+func (s *StreamingController) getSpinnerFrame() string {
+	if len(s.spinnerFrames) == 0 {
+		return "⠋"
+	}
+
+	// Advance frame every 80ms
+	now := time.Now()
+	if now.Sub(s.lastSpinTime) > 80*time.Millisecond {
+		s.spinnerFrame = (s.spinnerFrame + 1) % len(s.spinnerFrames)
+		s.lastSpinTime = now
+	}
+
+	return s.spinnerFrames[s.spinnerFrame]
 }
