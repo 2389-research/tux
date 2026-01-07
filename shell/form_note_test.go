@@ -1,4 +1,4 @@
-// form/note_test.go
+// shell/form_note_test.go
 package shell
 
 import (

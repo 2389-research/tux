@@ -1,4 +1,4 @@
-// help/binding.go
+// shell/help_binding.go
 package shell
 
 // Binding represents a keyboard shortcut or command.

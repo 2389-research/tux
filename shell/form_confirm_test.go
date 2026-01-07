@@ -1,4 +1,4 @@
-// form/confirm_test.go
+// shell/form_confirm_test.go
 package shell
 
 import (

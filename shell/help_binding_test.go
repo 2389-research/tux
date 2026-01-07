@@ -1,4 +1,4 @@
-// help/binding_test.go
+// shell/help_binding_test.go
 package shell
 
 import "testing"

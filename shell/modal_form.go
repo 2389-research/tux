@@ -1,4 +1,4 @@
-// modal/go
+// shell/modal_form.go
 package shell
 
 import (

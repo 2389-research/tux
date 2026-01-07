@@ -1,4 +1,4 @@
-// form/field.go
+// shell/form_field.go
 package shell
 
 import (

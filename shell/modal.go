@@ -1,4 +1,4 @@
-// Package modal provides modal overlay management for tux.
+// Package shell provides modal overlays, modal overlay management for tux.
 package shell
 
 import tea "github.com/charmbracelet/bubbletea"

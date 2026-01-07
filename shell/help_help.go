@@ -13,7 +13,7 @@ type Help struct {
 	theme      theme.Theme
 }
 
-// New creates a new Help component with the given categories.
+// NewHelp creates a new Help component with the given categories.
 func NewHelp(categories ...Category) *Help {
 	return &Help{
 		categories: categories,

@@ -1,4 +1,4 @@
-// form/select_test.go
+// shell/form_select_test.go
 package shell
 
 import (

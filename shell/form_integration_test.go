@@ -1,4 +1,4 @@
-// form/integration_test.go
+// shell/form_integration_test.go
 package shell
 
 import (

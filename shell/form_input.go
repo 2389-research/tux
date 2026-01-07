@@ -1,4 +1,4 @@
-// form/input.go
+// shell/form_input.go
 package shell
 
 import (
@@ -22,7 +22,7 @@ type InputField struct {
 	huhTheme    *huh.Theme
 }
 
-// NewInput creates a new input field.
+// NewInputField creates a new input field.
 func NewInputField() *InputField {
 	return &InputField{}
 }

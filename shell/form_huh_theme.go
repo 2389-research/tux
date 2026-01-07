@@ -1,4 +1,4 @@
-// form/huh_theme.go
+// shell/form_huh_theme.go
 package shell
 
 import (

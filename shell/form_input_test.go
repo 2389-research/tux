@@ -1,4 +1,4 @@
-// form/input_test.go
+// shell/form_input_test.go
 package shell
 
 import (

@@ -1,4 +1,4 @@
-// form/form.go
+// shell/form_form.go
 package shell
 
 import (
@@ -43,7 +43,7 @@ type Form struct {
 	onCancel     func()
 }
 
-// New creates a new form. Accepts fields or groups.
+// NewForm creates a new form. Accepts fields or groups.
 func NewForm(items ...any) *Form {
 	f := &Form{
 		state: StateActive,

@@ -1,4 +1,4 @@
-// form/validate_test.go
+// shell/form_validate_test.go
 package shell
 
 import "testing"
