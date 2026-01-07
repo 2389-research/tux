@@ -22,8 +22,10 @@ type Status struct {
 
 // StatusBar renders the status bar at the bottom of the shell.
 type StatusBar struct {
-	status Status
-	theme  theme.Theme
+	status           Status
+	theme            theme.Theme
+	streaming        *StreamingController
+	streamingVisible bool
 }
 
 // NewStatusBar creates a new status bar.
@@ -62,6 +64,14 @@ func (s *StatusBar) View(width int) string {
 		statusText = styles.Error.Render("○ disconnected")
 	}
 	sections = append(sections, statusText)
+
+	// Streaming status
+	if s.streamingVisible && s.streaming != nil {
+		streamingStatus := s.streaming.RenderStatus(s.theme)
+		if streamingStatus != "" {
+			sections = append(sections, streamingStatus)
+		}
+	}
 
 	// Tokens
 	if s.status.TokensMax > 0 {
@@ -135,4 +145,10 @@ func (s *StatusBar) SetMessage(message string) {
 // SetHints sets the hints text.
 func (s *StatusBar) SetHints(hints string) {
 	s.status.Hints = hints
+}
+
+// SetStreamingController sets the streaming controller for status display.
+func (s *StatusBar) SetStreamingController(sc *StreamingController, visible bool) {
+	s.streaming = sc
+	s.streamingVisible = visible
 }
