@@ -4,6 +4,8 @@ package shell
 import (
 	"strings"
 	"testing"
+
+	"github.com/2389-research/tux/theme"
 )
 
 func TestStreamingController_Lifecycle(t *testing.T) {
@@ -136,5 +138,34 @@ func TestStreamingController_Render(t *testing.T) {
 	status = s.RenderStatus(nil)
 	if !strings.Contains(status, "Bash") {
 		t.Errorf("expected 'Bash' in status, got %q", status)
+	}
+}
+
+func TestStatusBar_StreamingStatus(t *testing.T) {
+	th := theme.NewDraculaTheme()
+	sb := NewStatusBar(th)
+	s := NewStreamingController()
+
+	// No streaming status when not streaming
+	sb.SetStreamingController(s, true)
+	view := sb.View(80)
+	if strings.Contains(view, "Thinking") || strings.Contains(view, "tok/s") {
+		t.Error("expected no streaming status when not streaming")
+	}
+
+	// Start streaming and set thinking
+	s.Start()
+	s.AppendToken("test") // Need token to exit waiting state
+	s.SetThinking(true)
+	view = sb.View(80)
+	if !strings.Contains(view, "Thinking") {
+		t.Errorf("expected 'Thinking' in view, got %q", view)
+	}
+
+	// Disabled streaming status
+	sb.SetStreamingController(s, false)
+	view = sb.View(80)
+	if strings.Contains(view, "Thinking") {
+		t.Error("expected no streaming status when disabled")
 	}
 }
