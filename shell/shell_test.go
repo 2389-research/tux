@@ -717,3 +717,22 @@ func TestTabBarViewMultipleTabs(t *testing.T) {
 		t.Error("view should render all tabs")
 	}
 }
+
+func TestShell_Streaming(t *testing.T) {
+	sh := New(nil, DefaultConfig())
+
+	// Streaming() returns controller
+	s := sh.Streaming()
+	if s == nil {
+		t.Fatal("expected non-nil StreamingController")
+	}
+
+	// Same instance each time
+	if sh.Streaming() != s {
+		t.Error("expected same StreamingController instance")
+	}
+
+	// Can disable streaming status
+	sh.SetStreamingStatusVisible(false)
+	// (visibility tested in statusbar render)
+}

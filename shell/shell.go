@@ -14,12 +14,14 @@ type Shell struct {
 	input        *Input
 	statusBar    *StatusBar
 	modalManager *Manager
+	streaming    *StreamingController
 
 	// State
-	width   int
-	height  int
-	focused FocusTarget
-	ready   bool
+	width                  int
+	height                 int
+	focused                FocusTarget
+	ready                  bool
+	streamingStatusVisible bool
 
 	// Configuration
 	theme  theme.Theme
@@ -70,13 +72,15 @@ func New(th theme.Theme, cfg Config) *Shell {
 	}
 
 	s := &Shell{
-		theme:        th,
-		config:       cfg,
-		tabs:         NewTabBar(th),
-		input:        NewInput(th, cfg.InputPrefix, cfg.InputPlaceholder),
-		statusBar:    NewStatusBar(th),
-		modalManager: NewManager(),
-		focused:      FocusInput,
+		theme:                  th,
+		config:                 cfg,
+		tabs:                   NewTabBar(th),
+		input:                  NewInput(th, cfg.InputPrefix, cfg.InputPlaceholder),
+		statusBar:              NewStatusBar(th),
+		modalManager:           NewManager(),
+		streaming:              NewStreamingController(),
+		focused:                FocusInput,
+		streamingStatusVisible: true,
 	}
 
 	return s
@@ -276,6 +280,16 @@ func (s *Shell) SetStatus(status Status) {
 // Theme returns the current theme.
 func (s *Shell) Theme() theme.Theme {
 	return s.theme
+}
+
+// Streaming returns the streaming controller.
+func (s *Shell) Streaming() *StreamingController {
+	return s.streaming
+}
+
+// SetStreamingStatusVisible controls whether streaming status appears in statusbar.
+func (s *Shell) SetStreamingStatusVisible(visible bool) {
+	s.streamingStatusVisible = visible
 }
 
 // Run starts the shell as a Bubble Tea program.
