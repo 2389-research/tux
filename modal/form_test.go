@@ -104,3 +104,53 @@ func TestFormModalRender(t *testing.T) {
 		t.Error("render should produce output")
 	}
 }
+
+func TestFormModalDefaultID(t *testing.T) {
+	f := form.New(form.NewInput().WithID("test"))
+	m := NewFormModal(FormModalConfig{
+		Form: f,
+		// No ID set
+	})
+	if m.ID() != "form-modal" {
+		t.Errorf("expected default 'form-modal', got %s", m.ID())
+	}
+}
+
+func TestFormModalOnPop(t *testing.T) {
+	f := form.New(form.NewInput().WithID("test"))
+	m := NewFormModal(FormModalConfig{Form: f})
+	m.OnPop() // Should not panic
+}
+
+func TestFormModalHandleKeyNilForm(t *testing.T) {
+	m := NewFormModal(FormModalConfig{})
+	handled, cmd := m.HandleKey(tea.KeyMsg{Type: tea.KeyEnter})
+	if handled || cmd != nil {
+		t.Error("nil form should return false, nil")
+	}
+}
+
+func TestFormModalHandleKeyNoStateChange(t *testing.T) {
+	// Create a form with multiple fields so a single key doesn't complete it
+	f := form.New(
+		form.NewInput().WithID("field1").WithLabel("Field 1"),
+		form.NewInput().WithID("field2").WithLabel("Field 2"),
+	)
+
+	m := NewFormModal(FormModalConfig{
+		Form: f,
+	})
+
+	m.OnPush(80, 24)
+
+	// Send a regular character key that won't complete the form
+	handled, cmd := m.HandleKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'a'}})
+
+	// The key should be handled by the form but shouldn't return PopMsg
+	if !handled {
+		t.Error("key should be handled by form")
+	}
+	if cmd != nil {
+		t.Error("cmd should be nil when form state doesn't change")
+	}
+}
