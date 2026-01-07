@@ -72,3 +72,39 @@ func (s *StreamingController) IsStreaming() bool {
 func (s *StreamingController) IsWaiting() bool {
 	return s.streaming && s.waiting
 }
+
+// AppendToken adds a text chunk and updates token rate.
+func (s *StreamingController) AppendToken(text string) {
+	now := time.Now()
+	elapsed := now.Sub(s.lastTokenTime).Seconds()
+
+	if elapsed > 0 && s.tokenCount > 0 {
+		instantRate := 1.0 / elapsed
+		if s.tokenRate == 0 {
+			s.tokenRate = instantRate
+		} else {
+			// EMA with alpha = 0.3
+			s.tokenRate = 0.3*instantRate + 0.7*s.tokenRate
+		}
+	}
+
+	s.text += text
+	s.tokenCount++
+	s.lastTokenTime = now
+	s.waiting = false
+}
+
+// GetText returns the accumulated text.
+func (s *StreamingController) GetText() string {
+	return s.text
+}
+
+// TokenCount returns the number of tokens received.
+func (s *StreamingController) TokenCount() int {
+	return s.tokenCount
+}
+
+// TokenRate returns the current token rate (tokens/second).
+func (s *StreamingController) TokenRate() float64 {
+	return s.tokenRate
+}
