@@ -5,42 +5,12 @@ Gaps identified when comparing tux to hex for integration readiness.
 ## Completed
 
 - [x] **Neo-Terminal Theme** - Added as `theme/neoterminal.go`
+- [x] **Huh Form Integration** - Added as `form/` package wrapping huh with tux themes
+- [x] **Help System** - Added as `help/` package with categories, mode filtering, and HelpModal
 
 ## Needs Design/Brainstorming
 
-### 1. Huh Form Integration
-
-**Priority:** High
-**Status:** Needs brainstorming session
-
-Currently tux has hand-rolled modals (approval, wizard, confirm, list) but hex uses the `huh` library for forms. We should determine:
-
-- Should tux wrap huh forms?
-- Or provide theme integration for huh?
-- Or leave form building to the app layer?
-
-Hex usage:
-- `forms/approval.go` - tool approval with risk assessment
-- `forms/onboarding.go` - onboarding flow
-- `forms/settings.go` - settings management
-- `forms/quickactions.go` - quick actions menu
-
-### 2. Help System
-
-**Priority:** Medium
-**Status:** Needs design
-
-Hex has a context-aware help component (`components/help.go`) with:
-- `HelpMode` enum: Chat, History, Tools, Approval, Search, QuickActions
-- `KeyBindingCategory` with grouped bindings per mode
-- Wraps bubbles `help.Model` with theme styling
-
-Questions to resolve:
-- Should this be a shell component or standalone?
-- How to define keybindings per mode?
-- Integration with config keybindings?
-
-### 3. Streaming Display
+### 1. Streaming Display
 
 **Priority:** Medium
 **Status:** Enhancement needed
@@ -89,8 +59,8 @@ Hex uses glamour for rendering markdown in chat. This is content rendering that 
 | Gap | Priority | Action |
 |-----|----------|--------|
 | Neo-Terminal Theme | High | ✅ Done |
-| Huh Form Integration | High | Brainstorm |
-| Help System | Medium | Design |
-| Streaming Display | Medium | Enhance or skip |
+| Huh Form Integration | High | ✅ Done |
+| Help System | Medium | ✅ Done |
+| Streaming Display | Medium | Brainstorm |
 | View Modes | Low | Discuss |
 | Markdown | N/A | Out of scope |
