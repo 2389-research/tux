@@ -22,3 +22,4 @@ examples/minimal/minimal
 # OS
 .DS_Store
 Thumbs.db
+.worktrees/
