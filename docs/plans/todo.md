@@ -9,25 +9,22 @@ Gaps identified when comparing tux to hex for integration readiness.
 - [x] **Help System** - Added as `help/` package with categories, mode filtering, and HelpModal
 - [x] **Streaming Display** - Added `StreamingController` (via `shell.Streaming()`) and `StreamingContent` wrapper with typewriter effect
 
-## Needs Design/Brainstorming
+## Designed (Needs Implementation)
 
-### 1. View Modes (vs Tabs)
+### 1. Tabs and Modals
 
-**Priority:** Low
-**Status:** Discussion needed
+**Priority:** Medium
+**Status:** Design complete, needs implementation
+**Design:** `docs/plans/2026-01-07-tabs-and-modals-design.md`
 
-Hex has shell-level view modes:
-- `ViewModeIntro` - Welcome/splash screen
-- `ViewModeChat` - Main conversation
-- `ViewModeHistory` - History browser
-- `ViewModeTools` - Tool inspector
+Opinionated default for view management:
+- **Tabs** for persistent content views (Chat, History, Tools)
+- **Modals** for temporary overlays (Help, Approval, Forms)
 
-These are NOT tabs - they're full UI state changes. Currently tux has tabs only.
-
-Questions:
-- Are these just fullscreen modals?
-- Should shell support view modes natively?
-- Or let apps implement via tab content switching?
+Implementation needed:
+- Tab keyboard shortcuts (Ctrl+Tab, Ctrl+1/2/3)
+- Hidden tabs with shortcuts
+- Tab content lifecycle hooks (OnActivate/OnDeactivate)
 
 ## Out of Scope (App Layer)
 
@@ -45,5 +42,5 @@ Hex uses glamour for rendering markdown in chat. This is content rendering that 
 | Huh Form Integration | High | ✅ Done |
 | Help System | Medium | ✅ Done |
 | Streaming Display | Medium | ✅ Done |
-| View Modes | Low | Discuss |
+| Tabs and Modals | Medium | Designed, needs impl |
 | Markdown | N/A | Out of scope |
