@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/2389-research/tux/content"
-	"github.com/2389-research/tux/modal"
 	"github.com/2389-research/tux/theme"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -60,7 +59,7 @@ func TestShellModal(t *testing.T) {
 	}
 
 	// Push modal
-	m := &testModal{id: "test"}
+	m := &shellTestModal{id: "test"}
 	s.PushModal(m)
 
 	if !s.HasModal() {
@@ -197,7 +196,7 @@ func TestShellOverlayModal(t *testing.T) {
 	})
 
 	// Push modal
-	m := &testModal{id: "overlay-test"}
+	m := &shellTestModal{id: "overlay-test"}
 	s.PushModal(m)
 
 	// View should render with modal overlay
@@ -393,20 +392,20 @@ func TestTabBarSetSizeWithContent(t *testing.T) {
 	// Should not panic, and should update content size
 }
 
-// testModal for testing
-type testModal struct {
+// shellTestModal for testing
+type shellTestModal struct {
 	id         string
 	handleKey  bool
 	returnCmd  tea.Cmd
 }
 
-func (m *testModal) ID() string                     { return m.id }
-func (m *testModal) Title() string                  { return "Test" }
-func (m *testModal) Size() modal.Size               { return modal.SizeMedium }
-func (m *testModal) Render(width, height int) string { return "test modal" }
-func (m *testModal) OnPush(width, height int)       {}
-func (m *testModal) OnPop()                         {}
-func (m *testModal) HandleKey(key tea.KeyMsg) (bool, tea.Cmd) {
+func (m *shellTestModal) ID() string                     { return m.id }
+func (m *shellTestModal) Title() string                  { return "Test" }
+func (m *shellTestModal) Size() Size               { return SizeMedium }
+func (m *shellTestModal) Render(width, height int) string { return "test modal" }
+func (m *shellTestModal) OnPush(width, height int)       {}
+func (m *shellTestModal) OnPop()                         {}
+func (m *shellTestModal) HandleKey(key tea.KeyMsg) (bool, tea.Cmd) {
 	return m.handleKey, m.returnCmd
 }
 
@@ -417,7 +416,7 @@ func TestShellUpdateWithModalHandled(t *testing.T) {
 	s.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 
 	// Push modal that handles keys
-	m := &testModal{id: "handled", handleKey: true}
+	m := &shellTestModal{id: "handled", handleKey: true}
 	s.PushModal(m)
 
 	// Key should be handled by modal
@@ -430,7 +429,7 @@ func TestShellUpdateWithModalEsc(t *testing.T) {
 	s := New(nil, DefaultConfig())
 	s.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 
-	m := &testModal{id: "esctest", handleKey: false}
+	m := &shellTestModal{id: "esctest", handleKey: false}
 	s.PushModal(m)
 
 	if !s.HasModal() {
@@ -481,11 +480,11 @@ func TestShellUpdatePopMsg(t *testing.T) {
 	s := New(nil, DefaultConfig())
 	s.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 
-	m := &testModal{id: "poptest"}
+	m := &shellTestModal{id: "poptest"}
 	s.PushModal(m)
 
 	// Send PopMsg
-	s.Update(modal.PopMsg{})
+	s.Update(PopMsg{})
 	if s.HasModal() {
 		t.Error("modal should be closed after PopMsg")
 	}
@@ -495,10 +494,10 @@ func TestShellUpdatePushMsg(t *testing.T) {
 	s := New(nil, DefaultConfig())
 	s.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
 
-	m := &testModal{id: "pushtest"}
+	m := &shellTestModal{id: "pushtest"}
 
 	// Send PushMsg
-	s.Update(modal.PushMsg{Modal: m})
+	s.Update(PushMsg{Modal: m})
 	if !s.HasModal() {
 		t.Error("should have modal after PushMsg")
 	}

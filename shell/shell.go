@@ -2,7 +2,6 @@
 package shell
 
 import (
-	"github.com/2389-research/tux/modal"
 	"github.com/2389-research/tux/theme"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -14,7 +13,7 @@ type Shell struct {
 	tabs         *TabBar
 	input        *Input
 	statusBar    *StatusBar
-	modalManager *modal.Manager
+	modalManager *Manager
 
 	// State
 	width   int
@@ -76,7 +75,7 @@ func New(th theme.Theme, cfg Config) *Shell {
 		tabs:         NewTabBar(th),
 		input:        NewInput(th, cfg.InputPrefix, cfg.InputPlaceholder),
 		statusBar:    NewStatusBar(th),
-		modalManager: modal.NewManager(),
+		modalManager: NewManager(),
 		focused:      FocusInput,
 	}
 
@@ -133,10 +132,10 @@ func (s *Shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, cmd)
 		}
 
-	case modal.PopMsg:
+	case PopMsg:
 		s.modalManager.Pop()
 
-	case modal.PushMsg:
+	case PushMsg:
 		s.modalManager.Push(msg.Modal)
 	}
 
@@ -230,13 +229,13 @@ func (s *Shell) SetActiveTab(id string) {
 }
 
 // PushModal pushes a modal onto the stack.
-func (s *Shell) PushModal(m modal.Modal) {
+func (s *Shell) PushModal(m Modal) {
 	s.modalManager.Push(m)
 	s.focused = FocusModal
 }
 
 // PopModal pops the top modal from the stack.
-func (s *Shell) PopModal() modal.Modal {
+func (s *Shell) PopModal() Modal {
 	m := s.modalManager.Pop()
 	if !s.modalManager.HasActive() {
 		s.focused = FocusInput
@@ -244,7 +243,7 @@ func (s *Shell) PopModal() modal.Modal {
 	return m
 }
 
-// HasModal returns true if there's an active modal.
+// HasModal returns true if there's an active 
 func (s *Shell) HasModal() bool {
 	return s.modalManager.HasActive()
 }
