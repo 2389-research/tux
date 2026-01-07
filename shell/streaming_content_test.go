@@ -2,6 +2,7 @@
 package shell
 
 import (
+	"strings"
 	"testing"
 	"time"
 
@@ -47,5 +48,50 @@ func TestStreamingContent_Builder(t *testing.T) {
 
 	if sc.typewriterSpeed != 50*time.Millisecond {
 		t.Errorf("expected 50ms speed, got %v", sc.typewriterSpeed)
+	}
+}
+
+func TestStreamingContent_Typewriter(t *testing.T) {
+	inner := &mockContent{}
+	sc := NewStreamingContent(inner).WithTypewriter(true)
+
+	sc.SetText("Hello world")
+
+	// Initially position is 0, should show empty or cursor only
+	view := sc.View()
+	if len(view) > 5 { // Just cursor character
+		t.Errorf("expected minimal view initially, got %q", view)
+	}
+
+	// Advance position
+	sc.position = 5
+	view = sc.View()
+	if !strings.HasPrefix(view, "Hello") {
+		t.Errorf("expected 'Hello' prefix, got %q", view)
+	}
+
+	// Should have cursor
+	if !strings.Contains(view, "│") {
+		t.Errorf("expected cursor in view, got %q", view)
+	}
+
+	// Full position shows all text
+	sc.position = len("Hello world")
+	view = sc.View()
+	if !strings.Contains(view, "Hello world") {
+		t.Errorf("expected full text, got %q", view)
+	}
+}
+
+func TestStreamingContent_TypewriterDisabled(t *testing.T) {
+	inner := &mockContent{}
+	sc := NewStreamingContent(inner) // typewriter disabled by default
+
+	sc.SetText("Hello world")
+	view := sc.View()
+
+	// Should show full text immediately
+	if view != "Hello world" {
+		t.Errorf("expected 'Hello world', got %q", view)
 	}
 }

@@ -55,14 +55,67 @@ func (s *StreamingContent) Init() tea.Cmd {
 	return nil
 }
 
+// typewriterTickMsg is sent to advance typewriter position.
+type typewriterTickMsg struct{}
+
 // Update implements content.Content.
 func (s *StreamingContent) Update(msg tea.Msg) (content.Content, tea.Cmd) {
+	switch msg.(type) {
+	case typewriterTickMsg:
+		if s.typewriter && s.position < len(s.text) {
+			// Advance by 1-2 characters
+			advance := 1
+			if s.position < len(s.text)-1 {
+				// Skip faster over whitespace
+				if s.text[s.position] == ' ' || s.text[s.position] == '\n' {
+					advance = 2
+				}
+			}
+			s.position += advance
+			if s.position > len(s.text) {
+				s.position = len(s.text)
+			}
+
+			// Schedule next tick if not done
+			if s.position < len(s.text) {
+				return s, s.tickCmd()
+			}
+		}
+	}
+
 	return s, nil
+}
+
+// tickCmd returns a command that sends a typewriter tick after the configured delay.
+func (s *StreamingContent) tickCmd() tea.Cmd {
+	return tea.Tick(s.typewriterSpeed, func(time.Time) tea.Msg {
+		return typewriterTickMsg{}
+	})
+}
+
+// StartTypewriter begins the typewriter animation.
+func (s *StreamingContent) StartTypewriter() tea.Cmd {
+	if s.typewriter && s.position < len(s.text) {
+		return s.tickCmd()
+	}
+	return nil
 }
 
 // View implements content.Content.
 func (s *StreamingContent) View() string {
-	return s.text
+	if !s.typewriter {
+		return s.text
+	}
+
+	// Typewriter mode: show text up to position + cursor
+	if s.position >= len(s.text) {
+		return s.text
+	}
+
+	visible := s.text[:s.position]
+	cursor := "│"
+
+	return visible + cursor
 }
 
 // Value implements content.Content.
