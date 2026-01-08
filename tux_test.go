@@ -4,6 +4,8 @@ package tux
 import (
 	"context"
 	"testing"
+
+	"github.com/2389-research/tux/theme"
 )
 
 // mockAgent implements Agent for testing
@@ -59,4 +61,30 @@ func TestAgentInterface(t *testing.T) {
 
 	// Verify Cancel() can be called without panicking
 	agent.Cancel()
+}
+
+func TestWithThemeOption(t *testing.T) {
+	th := theme.NewDraculaTheme()
+	opt := WithTheme(th)
+	if opt == nil {
+		t.Error("WithTheme should return an option")
+	}
+}
+
+func TestWithTabOption(t *testing.T) {
+	tab := TabDef{
+		ID:    "custom",
+		Label: "Custom",
+	}
+	opt := WithTab(tab)
+	if opt == nil {
+		t.Error("WithTab should return an option")
+	}
+}
+
+func TestWithoutTabOption(t *testing.T) {
+	opt := WithoutTab("tools")
+	if opt == nil {
+		t.Error("WithoutTab should return an option")
+	}
 }

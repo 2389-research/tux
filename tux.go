@@ -9,7 +9,12 @@
 //   - Agent: backend interface for streaming, tool execution
 package tux
 
-import "context"
+import (
+	"context"
+
+	"github.com/2389-research/tux/content"
+	"github.com/2389-research/tux/theme"
+)
 
 const Version = "0.1.0"
 
@@ -50,3 +55,50 @@ const (
 	EventComplete   EventType = "complete"
 	EventError      EventType = "error"
 )
+
+// TabDef defines a custom tab.
+type TabDef struct {
+	ID       string
+	Label    string
+	Shortcut string          // e.g., "ctrl+d"
+	Hidden   bool
+	Content  content.Content
+}
+
+// Option configures the App.
+type Option func(*appConfig)
+
+// appConfig holds configuration for the App.
+type appConfig struct {
+	theme       theme.Theme
+	customTabs  []TabDef
+	removedTabs map[string]bool
+}
+
+func defaultAppConfig() *appConfig {
+	return &appConfig{
+		theme:       theme.NewDraculaTheme(),
+		removedTabs: make(map[string]bool),
+	}
+}
+
+// WithTheme sets the theme for the App.
+func WithTheme(th theme.Theme) Option {
+	return func(c *appConfig) {
+		c.theme = th
+	}
+}
+
+// WithTab adds a custom tab to the App.
+func WithTab(tab TabDef) Option {
+	return func(c *appConfig) {
+		c.customTabs = append(c.customTabs, tab)
+	}
+}
+
+// WithoutTab removes a default tab from the App.
+func WithoutTab(id string) Option {
+	return func(c *appConfig) {
+		c.removedTabs[id] = true
+	}
+}
