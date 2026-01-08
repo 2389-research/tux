@@ -22,18 +22,20 @@ type Tab struct {
 
 // TabBar manages tabs and renders the tab bar.
 type TabBar struct {
-	tabs     []Tab
-	active   int
-	width    int
-	height   int
-	theme    theme.Theme
+	tabs       []Tab
+	active     int
+	lastActive int // Track previous active tab for lifecycle hooks
+	width      int
+	height     int
+	theme      theme.Theme
 }
 
 // NewTabBar creates a new tab bar.
 func NewTabBar(th theme.Theme) *TabBar {
 	return &TabBar{
-		tabs:  make([]Tab, 0),
-		theme: th,
+		tabs:       make([]Tab, 0),
+		theme:      th,
+		lastActive: -1, // No previous tab initially
 	}
 }
 
@@ -77,6 +79,28 @@ func (t *TabBar) SetActiveByIndex(index int) {
 	if index >= 0 && index < len(t.tabs) {
 		t.active = index
 	}
+}
+
+// ActivateCurrentTab calls lifecycle hooks when switching tabs.
+// Call this after changing the active tab.
+func (t *TabBar) ActivateCurrentTab() tea.Cmd {
+	// Deactivate previous tab
+	if t.lastActive >= 0 && t.lastActive < len(t.tabs) && t.lastActive != t.active {
+		if tc, ok := t.tabs[t.lastActive].Content.(TabContent); ok {
+			tc.OnDeactivate()
+		}
+	}
+
+	// Activate current tab
+	var cmd tea.Cmd
+	if t.active >= 0 && t.active < len(t.tabs) {
+		if tc, ok := t.tabs[t.active].Content.(TabContent); ok {
+			cmd = tc.OnActivate()
+		}
+	}
+
+	t.lastActive = t.active
+	return cmd
 }
 
 // ActiveTab returns the currently active tab.

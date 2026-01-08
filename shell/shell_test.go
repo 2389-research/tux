@@ -894,3 +894,60 @@ func TestShellCustomTabShortcuts(t *testing.T) {
 		t.Error("expected a tab to be active")
 	}
 }
+
+func TestTabLifecycleHooks(t *testing.T) {
+	th := theme.NewDraculaTheme()
+	tb := NewTabBar(th)
+
+	activations := make([]string, 0)
+	deactivations := make([]string, 0)
+
+	content1 := &mockTabContent{
+		onActivate:   func() { activations = append(activations, "tab1") },
+		onDeactivate: func() { deactivations = append(deactivations, "tab1") },
+	}
+	content2 := &mockTabContent{
+		onActivate:   func() { activations = append(activations, "tab2") },
+		onDeactivate: func() { deactivations = append(deactivations, "tab2") },
+	}
+
+	tb.AddTab(Tab{ID: "tab1", Label: "Tab 1", Content: content1})
+	tb.AddTab(Tab{ID: "tab2", Label: "Tab 2", Content: content2})
+
+	// Initial tab should be activated
+	tb.ActivateCurrentTab()
+	if len(activations) != 1 || activations[0] != "tab1" {
+		t.Errorf("expected tab1 activation, got %v", activations)
+	}
+
+	// Switch to tab2
+	tb.SetActive("tab2")
+	tb.ActivateCurrentTab()
+
+	if len(deactivations) != 1 || deactivations[0] != "tab1" {
+		t.Errorf("expected tab1 deactivation, got %v", deactivations)
+	}
+	if len(activations) != 2 || activations[1] != "tab2" {
+		t.Errorf("expected tab2 activation, got %v", activations)
+	}
+}
+
+// mockTabContent implements TabContent for testing
+type mockTabContent struct {
+	mockContent
+	onActivate   func()
+	onDeactivate func()
+}
+
+func (m *mockTabContent) OnActivate() tea.Cmd {
+	if m.onActivate != nil {
+		m.onActivate()
+	}
+	return nil
+}
+
+func (m *mockTabContent) OnDeactivate() {
+	if m.onDeactivate != nil {
+		m.onDeactivate()
+	}
+}
