@@ -2,6 +2,8 @@
 package shell
 
 import (
+	"strings"
+
 	"github.com/2389-research/tux/theme"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -325,53 +327,10 @@ func (s *Shell) Run() error {
 
 // keyMsgToShortcut converts a tea.KeyMsg to a shortcut string.
 func keyMsgToShortcut(msg tea.KeyMsg) string {
-	switch msg.Type {
-	case tea.KeyCtrlA:
-		return "ctrl+a"
-	case tea.KeyCtrlB:
-		return "ctrl+b"
-	case tea.KeyCtrlD:
-		return "ctrl+d"
-	case tea.KeyCtrlE:
-		return "ctrl+e"
-	case tea.KeyCtrlF:
-		return "ctrl+f"
-	case tea.KeyCtrlG:
-		return "ctrl+g"
-	case tea.KeyCtrlH:
-		return "ctrl+h"
-	case tea.KeyCtrlI:
-		return "ctrl+i"
-	case tea.KeyCtrlJ:
-		return "ctrl+j"
-	case tea.KeyCtrlK:
-		return "ctrl+k"
-	case tea.KeyCtrlL:
-		return "ctrl+l"
-	case tea.KeyCtrlN:
-		return "ctrl+n"
-	case tea.KeyCtrlO:
-		return "ctrl+o"
-	case tea.KeyCtrlP:
-		return "ctrl+p"
-	case tea.KeyCtrlR:
-		return "ctrl+r"
-	case tea.KeyCtrlS:
-		return "ctrl+s"
-	case tea.KeyCtrlT:
-		return "ctrl+t"
-	case tea.KeyCtrlU:
-		return "ctrl+u"
-	case tea.KeyCtrlV:
-		return "ctrl+v"
-	case tea.KeyCtrlW:
-		return "ctrl+w"
-	case tea.KeyCtrlX:
-		return "ctrl+x"
-	case tea.KeyCtrlY:
-		return "ctrl+y"
-	case tea.KeyCtrlZ:
-		return "ctrl+z"
+	s := msg.String()
+	// Only return ctrl+letter shortcuts to avoid matching regular keys
+	if strings.HasPrefix(s, "ctrl+") {
+		return s
 	}
 	return ""
 }
