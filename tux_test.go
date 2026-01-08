@@ -315,3 +315,98 @@ func (m *mockAgentWithRun) Subscribe() <-chan Event {
 }
 
 func (m *mockAgentWithRun) Cancel() {}
+
+func TestAppCancelOnEscape(t *testing.T) {
+	events := make(chan Event, 10)
+	cancelCalled := make(chan struct{}, 1)
+	agent := &mockAgentWithCancel{
+		events: events,
+		onCancel: func() {
+			cancelCalled <- struct{}{}
+		},
+	}
+
+	app := New(agent)
+
+	// Start a run
+	runStarted := make(chan struct{}, 1)
+	agent.onRun = func() {
+		runStarted <- struct{}{}
+	}
+	app.submitInput("Hello")
+
+	// Wait for run to start
+	select {
+	case <-runStarted:
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("Run should have started")
+	}
+
+	// Cancel
+	app.cancelRun()
+
+	// Wait for cancel to be called
+	select {
+	case <-cancelCalled:
+		// Success
+	case <-time.After(100 * time.Millisecond):
+		t.Error("Agent.Cancel should have been called")
+	}
+}
+
+func TestAppIsRunning(t *testing.T) {
+	events := make(chan Event, 10)
+	runStarted := make(chan struct{}, 1)
+	agent := &mockAgentWithCancel{
+		events: events,
+		onRun: func() {
+			runStarted <- struct{}{}
+		},
+	}
+
+	app := New(agent)
+
+	// Initially not running
+	if app.isRunning() {
+		t.Error("App should not be running initially")
+	}
+
+	// Start a run
+	app.submitInput("Hello")
+
+	// Wait for run to actually start
+	select {
+	case <-runStarted:
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("Run should have started")
+	}
+
+	// Should be running
+	if !app.isRunning() {
+		t.Error("App should be running after submitInput")
+	}
+}
+
+type mockAgentWithCancel struct {
+	events   chan Event
+	onRun    func()
+	onCancel func()
+}
+
+func (m *mockAgentWithCancel) Run(ctx context.Context, prompt string) error {
+	if m.onRun != nil {
+		m.onRun()
+	}
+	<-ctx.Done()
+	return ctx.Err()
+}
+
+func (m *mockAgentWithCancel) Subscribe() <-chan Event {
+	return m.events
+}
+
+func (m *mockAgentWithCancel) Cancel() {
+	if m.onCancel != nil {
+		m.onCancel()
+	}
+}

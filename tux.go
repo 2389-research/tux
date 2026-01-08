@@ -244,3 +244,25 @@ func (a *App) processEvent(event Event) {
 		// TODO: Show error in status bar or modal
 	}
 }
+
+// cancelRun cancels the current agent run.
+// Thread-safe: acquires mutex before accessing ctx/cancel.
+func (a *App) cancelRun() {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	if a.cancel != nil {
+		a.cancel()
+		a.cancel = nil // Clear after calling
+	}
+	a.agent.Cancel()
+}
+
+// isRunning returns true if an agent run is in progress.
+// Thread-safe: acquires mutex before accessing ctx.
+func (a *App) isRunning() bool {
+	a.mu.Lock()
+	defer a.mu.Unlock()
+
+	return a.ctx != nil && a.ctx.Err() == nil
+}
