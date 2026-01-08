@@ -794,3 +794,39 @@ func TestTabBarSetActiveByIndex(t *testing.T) {
 		t.Errorf("expected tab1 unchanged, got %s", tb.ActiveTab().ID)
 	}
 }
+
+func TestShellTabIndexShortcuts(t *testing.T) {
+	th := theme.NewDraculaTheme()
+	sh := New(th, DefaultConfig())
+
+	sh.AddTab(Tab{ID: "tab1", Label: "Tab 1"})
+	sh.AddTab(Tab{ID: "tab2", Label: "Tab 2"})
+	sh.AddTab(Tab{ID: "tab3", Label: "Tab 3"})
+
+	// Simulate window size
+	sh.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+
+	// Alt+2 should switch to tab2
+	sh.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'2'}, Alt: true})
+	if sh.tabs.ActiveTab().ID != "tab2" {
+		t.Errorf("expected tab2 after Alt+2, got %s", sh.tabs.ActiveTab().ID)
+	}
+
+	// Alt+1 should switch to tab1
+	sh.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'1'}, Alt: true})
+	if sh.tabs.ActiveTab().ID != "tab1" {
+		t.Errorf("expected tab1 after Alt+1, got %s", sh.tabs.ActiveTab().ID)
+	}
+
+	// Alt+3 should switch to tab3
+	sh.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'3'}, Alt: true})
+	if sh.tabs.ActiveTab().ID != "tab3" {
+		t.Errorf("expected tab3 after Alt+3, got %s", sh.tabs.ActiveTab().ID)
+	}
+
+	// Alt+9 (out of range) should not change
+	sh.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'9'}, Alt: true})
+	if sh.tabs.ActiveTab().ID != "tab3" {
+		t.Errorf("expected tab3 unchanged after Alt+9, got %s", sh.tabs.ActiveTab().ID)
+	}
+}

@@ -125,6 +125,16 @@ func (s *Shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return s, tea.Quit
 		}
 
+		// Tab index shortcuts (Alt+1 through Alt+9)
+		if msg.Alt && len(msg.Runes) == 1 {
+			r := msg.Runes[0]
+			if r >= '1' && r <= '9' {
+				index := int(r - '1') // '1' -> 0, '2' -> 1, etc.
+				s.tabs.SetActiveByIndex(index)
+				return s, nil
+			}
+		}
+
 		// Route to focused component
 		switch s.focused {
 		case FocusInput:
