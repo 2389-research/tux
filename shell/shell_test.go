@@ -951,3 +951,40 @@ func (m *mockTabContent) OnDeactivate() {
 		m.onDeactivate()
 	}
 }
+
+func TestShellTabLifecycleOnSwitch(t *testing.T) {
+	th := theme.NewDraculaTheme()
+	sh := New(th, DefaultConfig())
+
+	activated := ""
+	deactivated := ""
+
+	content1 := &mockTabContent{
+		onActivate:   func() { activated = "tab1" },
+		onDeactivate: func() { deactivated = "tab1" },
+	}
+	content2 := &mockTabContent{
+		onActivate:   func() { activated = "tab2" },
+		onDeactivate: func() { deactivated = "tab2" },
+	}
+
+	sh.AddTab(Tab{ID: "tab1", Label: "Tab 1", Content: content1})
+	sh.AddTab(Tab{ID: "tab2", Label: "Tab 2", Content: content2})
+
+	// Simulate window size to make shell ready
+	sh.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+
+	// Initial activation
+	if activated != "tab1" {
+		t.Errorf("expected tab1 activated on init, got %q", activated)
+	}
+
+	// Switch via SetActiveTab
+	sh.SetActiveTab("tab2")
+	if deactivated != "tab1" {
+		t.Errorf("expected tab1 deactivated, got %q", deactivated)
+	}
+	if activated != "tab2" {
+		t.Errorf("expected tab2 activated, got %q", activated)
+	}
+}

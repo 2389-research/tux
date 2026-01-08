@@ -125,11 +125,15 @@ func (t *TabBar) SetSize(width, height int) {
 
 // HandleKey handles keyboard input for tab navigation.
 func (t *TabBar) HandleKey(msg tea.KeyMsg) tea.Cmd {
+	var cmds []tea.Cmd
+
 	switch msg.String() {
 	case "tab", "ctrl+tab":
 		t.NextTab()
+		cmds = append(cmds, t.ActivateCurrentTab())
 	case "shift+tab", "ctrl+shift+tab":
 		t.PrevTab()
+		cmds = append(cmds, t.ActivateCurrentTab())
 	}
 
 	// Pass to active content
@@ -137,7 +141,7 @@ func (t *TabBar) HandleKey(msg tea.KeyMsg) tea.Cmd {
 		tab.Content.Update(msg)
 	}
 
-	return nil
+	return tea.Batch(cmds...)
 }
 
 // NextTab switches to the next tab.

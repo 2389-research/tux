@@ -88,9 +88,7 @@ func New(th theme.Theme, cfg Config) *Shell {
 
 // Init implements tea.Model.
 func (s *Shell) Init() tea.Cmd {
-	return tea.Batch(
-		s.input.Init(),
-	)
+	return s.input.Init()
 }
 
 // Update implements tea.Model.
@@ -99,11 +97,16 @@ func (s *Shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
+		wasReady := s.ready
 		s.width = msg.Width
 		s.height = msg.Height
 		s.modalManager.SetSize(msg.Width, msg.Height)
 		s.ready = true
 		s.updateSizes()
+		// Activate initial tab when shell first becomes ready
+		if !wasReady {
+			cmds = append(cmds, s.tabs.ActivateCurrentTab())
+		}
 
 	case tea.KeyMsg:
 		// Modal captures all input when active
@@ -131,7 +134,7 @@ func (s *Shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if r >= '1' && r <= '9' {
 				index := int(r - '1') // '1' -> 0, '2' -> 1, etc.
 				s.tabs.SetActiveByIndex(index)
-				return s, nil
+				return s, s.tabs.ActivateCurrentTab()
 			}
 		}
 
@@ -140,7 +143,7 @@ func (s *Shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if shortcut != "" {
 			if tabID := s.tabs.FindByShortcut(shortcut); tabID != "" {
 				s.tabs.SetActive(tabID)
-				return s, nil
+				return s, s.tabs.ActivateCurrentTab()
 			}
 		}
 
@@ -248,8 +251,9 @@ func (s *Shell) RemoveTab(id string) {
 }
 
 // SetActiveTab switches to the tab with the given ID.
-func (s *Shell) SetActiveTab(id string) {
+func (s *Shell) SetActiveTab(id string) tea.Cmd {
 	s.tabs.SetActive(id)
+	return s.tabs.ActivateCurrentTab()
 }
 
 // PushModal pushes a modal onto the stack.
