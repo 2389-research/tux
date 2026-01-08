@@ -761,3 +761,36 @@ func TestShell_StreamingInView(t *testing.T) {
 		t.Error("expected no 'Thinking' when streaming status disabled")
 	}
 }
+
+func TestTabBarSetActiveByIndex(t *testing.T) {
+	th := theme.NewDraculaTheme()
+	tb := NewTabBar(th)
+
+	tb.AddTab(Tab{ID: "tab1", Label: "Tab 1"})
+	tb.AddTab(Tab{ID: "tab2", Label: "Tab 2"})
+	tb.AddTab(Tab{ID: "tab3", Label: "Tab 3"})
+
+	// Set by valid index
+	tb.SetActiveByIndex(1)
+	if tb.ActiveTab().ID != "tab2" {
+		t.Errorf("expected tab2, got %s", tb.ActiveTab().ID)
+	}
+
+	// Set by index 0
+	tb.SetActiveByIndex(0)
+	if tb.ActiveTab().ID != "tab1" {
+		t.Errorf("expected tab1, got %s", tb.ActiveTab().ID)
+	}
+
+	// Invalid index (too high) - should not change
+	tb.SetActiveByIndex(10)
+	if tb.ActiveTab().ID != "tab1" {
+		t.Errorf("expected tab1 unchanged, got %s", tb.ActiveTab().ID)
+	}
+
+	// Invalid index (negative) - should not change
+	tb.SetActiveByIndex(-1)
+	if tb.ActiveTab().ID != "tab1" {
+		t.Errorf("expected tab1 unchanged, got %s", tb.ActiveTab().ID)
+	}
+}

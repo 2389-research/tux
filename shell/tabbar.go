@@ -69,6 +69,14 @@ func (t *TabBar) SetActive(id string) {
 	}
 }
 
+// SetActiveByIndex sets the active tab by index (0-based).
+// Does nothing if index is out of range.
+func (t *TabBar) SetActiveByIndex(index int) {
+	if index >= 0 && index < len(t.tabs) {
+		t.active = index
+	}
+}
+
 // ActiveTab returns the currently active tab.
 func (t *TabBar) ActiveTab() *Tab {
 	if t.active >= 0 && t.active < len(t.tabs) {
