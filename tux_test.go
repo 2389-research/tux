@@ -90,7 +90,7 @@ func TestWithoutTabOption(t *testing.T) {
 }
 
 func TestNewApp(t *testing.T) {
-	events := make(chan Event)
+	events := make(chan Event, 1)
 	agent := &mockAgent{events: events}
 
 	app := New(agent)
@@ -100,7 +100,7 @@ func TestNewApp(t *testing.T) {
 }
 
 func TestNewAppWithOptions(t *testing.T) {
-	events := make(chan Event)
+	events := make(chan Event, 1)
 	agent := &mockAgent{events: events}
 
 	app := New(agent,
@@ -109,5 +109,46 @@ func TestNewAppWithOptions(t *testing.T) {
 	)
 	if app == nil {
 		t.Error("New with options should return an App")
+	}
+}
+
+func TestAppHasDefaultTabs(t *testing.T) {
+	events := make(chan Event, 1)
+	agent := &mockAgent{events: events}
+
+	app := New(agent)
+
+	// App should have chat content accessible
+	if app.chat == nil {
+		t.Error("App should have chat content")
+	}
+	if app.tools == nil {
+		t.Error("App should have tools content")
+	}
+}
+
+func TestAppWithoutToolsTab(t *testing.T) {
+	events := make(chan Event, 1)
+	agent := &mockAgent{events: events}
+
+	app := New(agent, WithoutTab("tools"))
+
+	if app.chat == nil {
+		t.Error("App should still have chat content")
+	}
+	// tools content still exists for event routing, just not displayed as tab
+}
+
+func TestAppWithMultipleCustomTabs(t *testing.T) {
+	events := make(chan Event, 1)
+	agent := &mockAgent{events: events}
+
+	app := New(agent,
+		WithTab(TabDef{ID: "custom1", Label: "Custom 1"}),
+		WithTab(TabDef{ID: "custom2", Label: "Custom 2"}),
+	)
+
+	if app == nil {
+		t.Error("App with multiple custom tabs should not be nil")
 	}
 }

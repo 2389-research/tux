@@ -62,7 +62,7 @@ type TabDef struct {
 	ID       string
 	Label    string
 	Shortcut string          // e.g., "ctrl+d"
-	Hidden   bool
+	Hidden   bool            // If true, tab is not shown in tab bar
 	Content  content.Content
 }
 
@@ -76,6 +76,8 @@ type appConfig struct {
 	removedTabs map[string]bool
 }
 
+// defaultAppConfig returns the default configuration with Dracula theme
+// and no tabs removed.
 func defaultAppConfig() *appConfig {
 	return &appConfig{
 		theme:       theme.NewDraculaTheme(),
@@ -110,6 +112,10 @@ type App struct {
 	shell  *shell.Shell
 	config *appConfig
 
+	// Content
+	chat  *ChatContent
+	tools *ToolsContent
+
 	// Runtime state
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -129,18 +135,33 @@ func New(agent Agent, opts ...Option) *App {
 	shellCfg := shell.DefaultConfig()
 	sh := shell.New(cfg.theme, shellCfg)
 
+	// Create content
+	chat := NewChatContent(cfg.theme)
+	tools := NewToolsContent(cfg.theme)
+
 	app := &App{
 		agent:  agent,
 		shell:  sh,
 		config: cfg,
+		chat:   chat,
+		tools:  tools,
 	}
 
 	// Add default tabs (unless removed)
 	if !cfg.removedTabs["chat"] {
-		// Chat tab will be added in Task 6
+		sh.AddTab(shell.Tab{
+			ID:      "chat",
+			Label:   "Chat",
+			Content: chat,
+		})
 	}
 	if !cfg.removedTabs["tools"] {
-		// Tools tab will be added in Task 6
+		sh.AddTab(shell.Tab{
+			ID:       "tools",
+			Label:    "Tools",
+			Shortcut: "ctrl+o",
+			Content:  tools,
+		})
 	}
 
 	// Add custom tabs
