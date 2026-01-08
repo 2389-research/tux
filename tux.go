@@ -182,3 +182,24 @@ func New(agent Agent, opts ...Option) *App {
 func (a *App) Run() error {
 	return a.shell.Run()
 }
+
+// processEvent routes an agent event to the appropriate content.
+// This is called for each event received from the agent's event channel.
+func (a *App) processEvent(event Event) {
+	switch event.Type {
+	case EventText:
+		a.chat.AppendText(event.Text)
+
+	case EventToolCall:
+		a.tools.AddToolCall(event.ToolID, event.ToolName, event.ToolParams)
+
+	case EventToolResult:
+		a.tools.AddToolResult(event.ToolID, event.ToolOutput, event.Success)
+
+	case EventComplete:
+		a.chat.FinishAssistantMessage()
+
+	case EventError:
+		// TODO: Show error in status bar or modal
+	}
+}

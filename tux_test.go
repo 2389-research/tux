@@ -3,6 +3,8 @@ package tux
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/2389-research/tux/theme"
@@ -151,4 +153,108 @@ func TestAppWithMultipleCustomTabs(t *testing.T) {
 	if app == nil {
 		t.Error("App with multiple custom tabs should not be nil")
 	}
+}
+
+func TestAppRoutesTextEvents(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+
+	app := New(agent)
+
+	// Process a text event
+	app.processEvent(Event{Type: EventText, Text: "Hello"})
+
+	// Chat should have the text
+	view := app.chat.View()
+	if !strings.Contains(view, "Hello") {
+		t.Errorf("Chat should contain 'Hello', got: %s", view)
+	}
+}
+
+func TestAppRoutesToolCallEvents(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+
+	app := New(agent)
+
+	// Process tool call event
+	app.processEvent(Event{
+		Type:       EventToolCall,
+		ToolID:     "tool-1",
+		ToolName:   "read_file",
+		ToolParams: map[string]any{"path": "/test"},
+	})
+
+	// Tools should have the call
+	view := app.tools.View()
+	if !strings.Contains(view, "read_file") {
+		t.Errorf("Tools should contain 'read_file', got: %s", view)
+	}
+}
+
+func TestAppRoutesToolResultEvents(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+
+	app := New(agent)
+
+	// Add a tool call first
+	app.processEvent(Event{
+		Type:     EventToolCall,
+		ToolID:   "tool-1",
+		ToolName: "read_file",
+	})
+
+	// Then add result
+	app.processEvent(Event{
+		Type:       EventToolResult,
+		ToolID:     "tool-1",
+		ToolOutput: "file contents",
+		Success:    true,
+	})
+
+	// Tools should show success
+	view := app.tools.View()
+	if !strings.Contains(view, "\u2713") {
+		t.Errorf("Tools should show success marker, got: %s", view)
+	}
+}
+
+func TestAppRoutesCompleteEvent(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+
+	app := New(agent)
+
+	// Add streaming text
+	app.processEvent(Event{Type: EventText, Text: "Response"})
+
+	// Complete the message
+	app.processEvent(Event{Type: EventComplete})
+
+	// Chat should have the message finalized
+	messages, ok := app.chat.Value().([]chatMessage)
+	if !ok {
+		t.Error("Value() should return []chatMessage")
+		return
+	}
+	if len(messages) != 1 {
+		t.Errorf("Expected 1 finalized message, got %d", len(messages))
+	}
+}
+
+func TestAppRoutesErrorEvent(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+
+	app := New(agent)
+
+	// Process an error event (currently a no-op, but shouldn't panic)
+	app.processEvent(Event{
+		Type:  EventError,
+		Error: fmt.Errorf("test error"),
+	})
+
+	// For now, just verify it doesn't panic
+	// Error display will be implemented in future tasks
 }
