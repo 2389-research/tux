@@ -88,3 +88,26 @@ func TestWithoutTabOption(t *testing.T) {
 		t.Error("WithoutTab should return an option")
 	}
 }
+
+func TestNewApp(t *testing.T) {
+	events := make(chan Event)
+	agent := &mockAgent{events: events}
+
+	app := New(agent)
+	if app == nil {
+		t.Error("New should return an App")
+	}
+}
+
+func TestNewAppWithOptions(t *testing.T) {
+	events := make(chan Event)
+	agent := &mockAgent{events: events}
+
+	app := New(agent,
+		WithTheme(theme.NewNeoTerminalTheme()),
+		WithoutTab("tools"),
+	)
+	if app == nil {
+		t.Error("New with options should return an App")
+	}
+}

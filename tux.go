@@ -13,6 +13,7 @@ import (
 	"context"
 
 	"github.com/2389-research/tux/content"
+	"github.com/2389-research/tux/shell"
 	"github.com/2389-research/tux/theme"
 )
 
@@ -101,4 +102,62 @@ func WithoutTab(id string) Option {
 	return func(c *appConfig) {
 		c.removedTabs[id] = true
 	}
+}
+
+// App is the main agent TUI application.
+type App struct {
+	agent  Agent
+	shell  *shell.Shell
+	config *appConfig
+
+	// Runtime state
+	ctx    context.Context
+	cancel context.CancelFunc
+}
+
+// New creates a new App with the given agent and options.
+func New(agent Agent, opts ...Option) *App {
+	if agent == nil {
+		panic("tux.New: agent cannot be nil")
+	}
+
+	cfg := defaultAppConfig()
+	for _, opt := range opts {
+		opt(cfg)
+	}
+
+	shellCfg := shell.DefaultConfig()
+	sh := shell.New(cfg.theme, shellCfg)
+
+	app := &App{
+		agent:  agent,
+		shell:  sh,
+		config: cfg,
+	}
+
+	// Add default tabs (unless removed)
+	if !cfg.removedTabs["chat"] {
+		// Chat tab will be added in Task 6
+	}
+	if !cfg.removedTabs["tools"] {
+		// Tools tab will be added in Task 6
+	}
+
+	// Add custom tabs
+	for _, tab := range cfg.customTabs {
+		sh.AddTab(shell.Tab{
+			ID:       tab.ID,
+			Label:    tab.Label,
+			Shortcut: tab.Shortcut,
+			Hidden:   tab.Hidden,
+			Content:  tab.Content,
+		})
+	}
+
+	return app
+}
+
+// Run starts the App.
+func (a *App) Run() error {
+	return a.shell.Run()
 }
