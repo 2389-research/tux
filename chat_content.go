@@ -3,6 +3,7 @@ package tux
 
 import (
 	"strings"
+	"sync"
 
 	"github.com/2389-research/tux/content"
 	"github.com/2389-research/tux/theme"
@@ -12,6 +13,7 @@ import (
 
 // ChatContent displays the conversation in the Chat tab.
 type ChatContent struct {
+	mu       sync.Mutex
 	theme    theme.Theme
 	messages []chatMessage
 	current  strings.Builder // Current streaming message
@@ -44,6 +46,9 @@ func (c *ChatContent) Update(msg tea.Msg) (content.Content, tea.Cmd) {
 
 // View implements content.Content.
 func (c *ChatContent) View() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	var parts []string
 
 	userStyle := lipgloss.NewStyle().Foreground(c.theme.UserColor())
@@ -69,6 +74,8 @@ func (c *ChatContent) View() string {
 
 // Value implements content.Content.
 func (c *ChatContent) Value() any {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	return c.messages
 }
 
@@ -80,11 +87,15 @@ func (c *ChatContent) SetSize(width, height int) {
 
 // AppendText appends streaming text to the current assistant message.
 func (c *ChatContent) AppendText(text string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.current.WriteString(text)
 }
 
 // AddUserMessage adds a user message to the conversation.
 func (c *ChatContent) AddUserMessage(content string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.messages = append(c.messages, chatMessage{
 		role:    "user",
 		content: content,
@@ -93,6 +104,8 @@ func (c *ChatContent) AddUserMessage(content string) {
 
 // FinishAssistantMessage completes the current streaming message.
 func (c *ChatContent) FinishAssistantMessage() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	if c.current.Len() > 0 {
 		c.messages = append(c.messages, chatMessage{
 			role:    "assistant",

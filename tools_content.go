@@ -4,6 +4,7 @@ package tux
 import (
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/2389-research/tux/content"
@@ -16,6 +17,7 @@ var _ content.Content = (*ToolsContent)(nil)
 
 // ToolsContent displays the tool call timeline in the Tools tab.
 type ToolsContent struct {
+	mu     sync.Mutex
 	theme  theme.Theme
 	items  []toolItem
 	width  int
@@ -52,6 +54,9 @@ func (c *ToolsContent) Update(msg tea.Msg) (content.Content, tea.Cmd) {
 
 // View implements content.Content.
 func (c *ToolsContent) View() string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
 	if len(c.items) == 0 {
 		return "No tool calls yet"
 	}
@@ -88,6 +93,8 @@ func (c *ToolsContent) View() string {
 
 // Value implements content.Content.
 func (c *ToolsContent) Value() any {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	return c.items
 }
 
@@ -99,6 +106,8 @@ func (c *ToolsContent) SetSize(width, height int) {
 
 // AddToolCall adds a tool call to the timeline.
 func (c *ToolsContent) AddToolCall(id, name string, params map[string]any) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.items = append(c.items, toolItem{
 		id:        id,
 		name:      name,
@@ -109,6 +118,8 @@ func (c *ToolsContent) AddToolCall(id, name string, params map[string]any) {
 
 // AddToolResult adds a result to an existing tool call.
 func (c *ToolsContent) AddToolResult(id, output string, success bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	for i := range c.items {
 		if c.items[i].id == id {
 			c.items[i].output = output
