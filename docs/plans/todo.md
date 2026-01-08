@@ -8,23 +8,7 @@ Gaps identified when comparing tux to hex for integration readiness.
 - [x] **Huh Form Integration** - Added as `form/` package wrapping huh with tux themes
 - [x] **Help System** - Added as `help/` package with categories, mode filtering, and HelpModal
 - [x] **Streaming Display** - Added `StreamingController` (via `shell.Streaming()`) and `StreamingContent` wrapper with typewriter effect
-
-## Designed (Needs Implementation)
-
-### 1. Tabs and Modals
-
-**Priority:** Medium
-**Status:** Design complete, needs implementation
-**Design:** `docs/plans/2026-01-07-tabs-and-modals-design.md`
-
-Opinionated default for view management:
-- **Tabs** for persistent content views (Chat, History, Tools)
-- **Modals** for temporary overlays (Help, Approval, Forms)
-
-Implementation needed:
-- Tab keyboard shortcuts (Ctrl+Tab, Ctrl+1/2/3)
-- Hidden tabs with shortcuts
-- Tab content lifecycle hooks (OnActivate/OnDeactivate)
+- [x] **Tabs and Modals** - Added Alt+1-9 shortcuts, hidden tabs, custom shortcuts, lifecycle hooks (OnActivate/OnDeactivate)
 
 ## Out of Scope (App Layer)
 
@@ -42,5 +26,5 @@ Hex uses glamour for rendering markdown in chat. This is content rendering that 
 | Huh Form Integration | High | ✅ Done |
 | Help System | Medium | ✅ Done |
 | Streaming Display | Medium | ✅ Done |
-| Tabs and Modals | Medium | Designed, needs impl |
+| Tabs and Modals | Medium | ✅ Done |
 | Markdown | N/A | Out of scope |
