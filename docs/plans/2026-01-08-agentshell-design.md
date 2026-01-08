@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Make `shell.New(agent)` produce a fully-wired agent TUI with sensible defaults, so spinning up a new agent app is just: define tools, create mux agent, pass to shell, done.
+**Goal:** Make `tux.New(agent)` produce a fully-wired agent TUI with sensible defaults, so spinning up a new agent app is just: define tools, create mux agent, pass to tux, done.
 
 **Architecture:** Shell accepts a mux agent directly. Default tabs (Chat, Tools) and approval flow are auto-wired. Apps can customize via functional options.
 
@@ -22,7 +22,7 @@ Today, creating a new agent TUI (like hex or jeff) requires significant boilerpl
 
 ### Solution
 
-`shell.New(agent)` gives you a working agent TUI. Tools are already in the agent's registry. Events auto-route to tabs. Approval modal auto-wires. Customize only what's different.
+`tux.New(agent)` gives you a working agent TUI. Tools are already in the agent's registry. Events auto-route to tabs. Approval modal auto-wires. Customize only what's different.
 
 ---
 
@@ -43,18 +43,18 @@ agent := agent.New(agent.Config{
     SystemPrompt: "You are a helpful assistant.",
 })
 
-// Shell does the rest
-s := shell.New(agent)
+// tux does the rest
+s := tux.New(agent)
 s.Run()
 ```
 
 ### With Customizations
 
 ```go
-s := shell.New(agent,
+s := tux.New(agent,
     // UI customizations
-    shell.WithTheme(myTheme),
-    shell.WithTab(shell.TabDef{
+    tux.WithTheme(myTheme),
+    tux.WithTab(tux.TabDef{
         ID:       "diff",
         Label:    "Diff Viewer",
         Shortcut: "ctrl+d",
@@ -62,13 +62,13 @@ s := shell.New(agent,
     }),
 
     // Disable a default tab
-    shell.WithoutTab("tools"),
+    tux.WithoutTab("tools"),
 
     // Custom tool classifier
-    shell.WithClassifier(myClassifier),
+    tux.WithClassifier(myClassifier),
 
     // Additional shortcuts
-    shell.WithShortcut("ctrl+d", showDiffAction),
+    tux.WithShortcut("ctrl+d", showDiffAction),
 )
 s.Run()
 ```
@@ -179,7 +179,7 @@ cancel()
 ### Adding Custom Tabs
 
 ```go
-shell.WithTab(shell.TabDef{
+tux.WithTab(tux.TabDef{
     ID:       "diff",
     Label:    "Diff Viewer",
     Shortcut: "ctrl+d",      // optional
@@ -191,14 +191,14 @@ shell.WithTab(shell.TabDef{
 ### Removing Default Tabs
 
 ```go
-shell.WithoutTab("tools")  // remove tools tab
+tux.WithoutTab("tools")  // remove tools tab
 ```
 
 ### Custom Tool Classifier
 
 ```go
 // Override which tools need approval
-shell.WithClassifier(func(t tool.ToolInfo) (ToolAction, string) {
+tux.WithClassifier(func(t tool.ToolInfo) (ToolAction, string) {
     if t.Name == "read_file" {
         return ActionAutoApprove, "read-only"
     }
@@ -209,13 +209,13 @@ shell.WithClassifier(func(t tool.ToolInfo) (ToolAction, string) {
 ### Theme
 
 ```go
-shell.WithTheme(theme.NewNeoTerminalTheme())
+tux.WithTheme(theme.NewNeoTerminalTheme())
 ```
 
 ### Additional Shortcuts
 
 ```go
-shell.WithShortcut("ctrl+d", func() tea.Cmd {
+tux.WithShortcut("ctrl+d", func() tea.Cmd {
     return showDiffModal()
 })
 ```
@@ -229,9 +229,9 @@ shell.WithShortcut("ctrl+d", func() tea.Cmd {
 │         Your App (hex, jeff)             │
 │   - defines tools                        │
 │   - creates mux agent                    │
-│   - calls shell.New(agent)               │
+│   - calls tux.New(agent)                 │
 ├─────────────────────────────────────────┤
-│        shell.New(agent) [NEW]            │
+│          tux.New(agent) [NEW]            │
 │   - creates default tabs (Chat, Tools)   │
 │   - wires event routing                  │
 │   - wires approval flow                  │
@@ -276,7 +276,7 @@ shell.WithShortcut("ctrl+d", func() tea.Cmd {
 ## Success Criteria
 
 1. New agent app is <20 lines to get working TUI
-2. Hex can migrate to shell.New(agent) with minimal changes
+2. Hex can migrate to tux.New(agent) with minimal changes
 3. Jeff can migrate similarly
-4. Custom tabs/modals work without forking shell
+4. Custom tabs/modals work without forking tux
 5. No mux changes required (current interface sufficient)
