@@ -11,6 +11,7 @@ package tux
 
 import (
 	"context"
+	"sync"
 
 	"github.com/2389-research/tux/content"
 	"github.com/2389-research/tux/shell"
@@ -117,6 +118,7 @@ type App struct {
 	tools *ToolsContent
 
 	// Runtime state
+	mu     sync.Mutex
 	ctx    context.Context
 	cancel context.CancelFunc
 }
@@ -181,6 +183,45 @@ func New(agent Agent, opts ...Option) *App {
 // Run starts the App.
 func (a *App) Run() error {
 	return a.shell.Run()
+}
+
+// submitInput starts an agent run with the given prompt.
+func (a *App) submitInput(prompt string) {
+	// Add user message to chat
+	a.chat.AddUserMessage(prompt)
+
+	// Create cancellable context (protected by mutex)
+	a.mu.Lock()
+	a.ctx, a.cancel = context.WithCancel(context.Background())
+	ctx := a.ctx
+	a.mu.Unlock()
+
+	// Subscribe to events
+	events := a.agent.Subscribe()
+
+	// Run agent in goroutine
+	go func() {
+		// Start event processing
+		go a.processEvents(events)
+
+		// Run agent
+		if err := a.agent.Run(ctx, prompt); err != nil {
+			a.mu.Lock()
+			cancelled := a.ctx.Err() != nil
+			a.mu.Unlock()
+			if !cancelled {
+				// Not cancelled, real error
+				a.processEvent(Event{Type: EventError, Error: err})
+			}
+		}
+	}()
+}
+
+// processEvents reads events from the channel and routes them.
+func (a *App) processEvents(events <-chan Event) {
+	for event := range events {
+		a.processEvent(event)
+	}
 }
 
 // processEvent routes an agent event to the appropriate content.

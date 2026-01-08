@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/2389-research/tux/theme"
 )
@@ -258,3 +259,59 @@ func TestAppRoutesErrorEvent(t *testing.T) {
 	// For now, just verify it doesn't panic
 	// Error display will be implemented in future tasks
 }
+
+func TestAppSubmitInput(t *testing.T) {
+	events := make(chan Event, 10)
+	runCalled := make(chan string, 1) // Channel to signal run was called with prompt
+	agent := &mockAgentWithRun{
+		events: events,
+		onRun: func(prompt string) {
+			runCalled <- prompt
+		},
+	}
+
+	app := New(agent)
+	app.submitInput("Hello")
+
+	// Wait for run to be called (with timeout)
+	select {
+	case prompt := <-runCalled:
+		if prompt != "Hello" {
+			t.Errorf("Expected prompt 'Hello', got '%s'", prompt)
+		}
+	case <-time.After(100 * time.Millisecond):
+		t.Error("Agent.Run should have been called")
+	}
+}
+
+func TestAppSubmitInputAddsUserMessage(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgentWithRun{events: events}
+
+	app := New(agent)
+	app.submitInput("Test prompt")
+
+	// Chat should have user message
+	view := app.chat.View()
+	if !strings.Contains(view, "Test prompt") {
+		t.Errorf("Chat should contain user message, got: %s", view)
+	}
+}
+
+type mockAgentWithRun struct {
+	events chan Event
+	onRun  func(string)
+}
+
+func (m *mockAgentWithRun) Run(ctx context.Context, prompt string) error {
+	if m.onRun != nil {
+		m.onRun(prompt)
+	}
+	return nil
+}
+
+func (m *mockAgentWithRun) Subscribe() <-chan Event {
+	return m.events
+}
+
+func (m *mockAgentWithRun) Cancel() {}
