@@ -863,3 +863,34 @@ func TestTabBarHiddenTabs(t *testing.T) {
 		t.Errorf("expected tools tab active, got %s", tb.ActiveTab().ID)
 	}
 }
+
+func TestShellCustomTabShortcuts(t *testing.T) {
+	th := theme.NewDraculaTheme()
+	sh := New(th, DefaultConfig())
+
+	sh.AddTab(Tab{ID: "chat", Label: "Chat"})
+	sh.AddTab(Tab{ID: "history", Label: "History", Hidden: true, Shortcut: "ctrl+r"})
+	sh.AddTab(Tab{ID: "tools", Label: "Tools", Hidden: true, Shortcut: "ctrl+o"})
+
+	// Simulate window size
+	sh.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+
+	// Ctrl+R should switch to history
+	sh.Update(tea.KeyMsg{Type: tea.KeyCtrlR})
+	if sh.tabs.ActiveTab().ID != "history" {
+		t.Errorf("expected history after Ctrl+R, got %s", sh.tabs.ActiveTab().ID)
+	}
+
+	// Ctrl+O should switch to tools
+	sh.Update(tea.KeyMsg{Type: tea.KeyCtrlO})
+	if sh.tabs.ActiveTab().ID != "tools" {
+		t.Errorf("expected tools after Ctrl+O, got %s", sh.tabs.ActiveTab().ID)
+	}
+
+	// Pressing same shortcut again should toggle back to previous (or stay - depends on design)
+	// For now, just verify it doesn't break
+	sh.Update(tea.KeyMsg{Type: tea.KeyCtrlO})
+	if sh.tabs.ActiveTab() == nil {
+		t.Error("expected a tab to be active")
+	}
+}

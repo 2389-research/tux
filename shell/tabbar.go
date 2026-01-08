@@ -16,7 +16,8 @@ type Tab struct {
 	Badge    string
 	Content  content.Content
 	Closable bool
-	Hidden   bool // Hidden tabs are accessible but not shown in tab bar
+	Hidden   bool   // Hidden tabs are accessible but not shown in tab bar
+	Shortcut string // Keyboard shortcut to activate this tab (e.g., "ctrl+r")
 }
 
 // TabBar manages tabs and renders the tab bar.
@@ -203,4 +204,14 @@ func (t *TabBar) SetBadge(id string, badge string) {
 			return
 		}
 	}
+}
+
+// FindByShortcut returns the tab ID matching the given shortcut, or empty string.
+func (t *TabBar) FindByShortcut(shortcut string) string {
+	for _, tab := range t.tabs {
+		if tab.Shortcut == shortcut {
+			return tab.ID
+		}
+	}
+	return ""
 }
