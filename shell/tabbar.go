@@ -16,22 +16,26 @@ type Tab struct {
 	Badge    string
 	Content  content.Content
 	Closable bool
+	Hidden   bool   // Hidden tabs are accessible but not shown in tab bar
+	Shortcut string // Keyboard shortcut to activate this tab (e.g., "ctrl+r")
 }
 
 // TabBar manages tabs and renders the tab bar.
 type TabBar struct {
-	tabs     []Tab
-	active   int
-	width    int
-	height   int
-	theme    theme.Theme
+	tabs       []Tab
+	active     int
+	lastActive int // Track previous active tab for lifecycle hooks
+	width      int
+	height     int
+	theme      theme.Theme
 }
 
 // NewTabBar creates a new tab bar.
 func NewTabBar(th theme.Theme) *TabBar {
 	return &TabBar{
-		tabs:  make([]Tab, 0),
-		theme: th,
+		tabs:       make([]Tab, 0),
+		theme:      th,
+		lastActive: -1, // No previous tab initially
 	}
 }
 
@@ -69,6 +73,36 @@ func (t *TabBar) SetActive(id string) {
 	}
 }
 
+// SetActiveByIndex sets the active tab by index (0-based).
+// Does nothing if index is out of range.
+func (t *TabBar) SetActiveByIndex(index int) {
+	if index >= 0 && index < len(t.tabs) {
+		t.active = index
+	}
+}
+
+// ActivateCurrentTab calls lifecycle hooks when switching tabs.
+// Call this after changing the active tab.
+func (t *TabBar) ActivateCurrentTab() tea.Cmd {
+	// Deactivate previous tab
+	if t.lastActive >= 0 && t.lastActive < len(t.tabs) && t.lastActive != t.active {
+		if tc, ok := t.tabs[t.lastActive].Content.(TabContent); ok {
+			tc.OnDeactivate()
+		}
+	}
+
+	// Activate current tab
+	var cmd tea.Cmd
+	if t.active >= 0 && t.active < len(t.tabs) {
+		if tc, ok := t.tabs[t.active].Content.(TabContent); ok {
+			cmd = tc.OnActivate()
+		}
+	}
+
+	t.lastActive = t.active
+	return cmd
+}
+
 // ActiveTab returns the currently active tab.
 func (t *TabBar) ActiveTab() *Tab {
 	if t.active >= 0 && t.active < len(t.tabs) {
@@ -91,11 +125,15 @@ func (t *TabBar) SetSize(width, height int) {
 
 // HandleKey handles keyboard input for tab navigation.
 func (t *TabBar) HandleKey(msg tea.KeyMsg) tea.Cmd {
+	var cmds []tea.Cmd
+
 	switch msg.String() {
 	case "tab", "ctrl+tab":
 		t.NextTab()
+		cmds = append(cmds, t.ActivateCurrentTab())
 	case "shift+tab", "ctrl+shift+tab":
 		t.PrevTab()
+		cmds = append(cmds, t.ActivateCurrentTab())
 	}
 
 	// Pass to active content
@@ -103,7 +141,7 @@ func (t *TabBar) HandleKey(msg tea.KeyMsg) tea.Cmd {
 		tab.Content.Update(msg)
 	}
 
-	return nil
+	return tea.Batch(cmds...)
 }
 
 // NextTab switches to the next tab.
@@ -133,6 +171,10 @@ func (t *TabBar) View() string {
 	var tabs []string
 
 	for i, tab := range t.tabs {
+		if tab.Hidden {
+			continue
+		}
+
 		label := tab.Label
 		if tab.Badge != "" {
 			label += " " + tab.Badge
@@ -146,6 +188,10 @@ func (t *TabBar) View() string {
 		}
 
 		tabs = append(tabs, style.Render(label))
+	}
+
+	if len(tabs) == 0 {
+		return ""
 	}
 
 	return strings.Join(tabs, "  ")
@@ -186,4 +232,14 @@ func (t *TabBar) SetBadge(id string, badge string) {
 			return
 		}
 	}
+}
+
+// FindByShortcut returns the tab ID matching the given shortcut, or empty string.
+func (t *TabBar) FindByShortcut(shortcut string) string {
+	for _, tab := range t.tabs {
+		if tab.Shortcut == shortcut {
+			return tab.ID
+		}
+	}
+	return ""
 }
