@@ -830,3 +830,36 @@ func TestShellTabIndexShortcuts(t *testing.T) {
 		t.Errorf("expected tab3 unchanged after Alt+9, got %s", sh.tabs.ActiveTab().ID)
 	}
 }
+
+func TestTabBarHiddenTabs(t *testing.T) {
+	th := theme.NewDraculaTheme()
+	tb := NewTabBar(th)
+
+	tb.AddTab(Tab{ID: "chat", Label: "Chat"})
+	tb.AddTab(Tab{ID: "history", Label: "History", Hidden: true})
+	tb.AddTab(Tab{ID: "tools", Label: "Tools", Hidden: true})
+
+	// View should only show non-hidden tabs
+	view := tb.View()
+	if !strings.Contains(view, "Chat") {
+		t.Error("expected Chat in view")
+	}
+	if strings.Contains(view, "History") {
+		t.Error("expected History to be hidden in view")
+	}
+	if strings.Contains(view, "Tools") {
+		t.Error("expected Tools to be hidden in view")
+	}
+
+	// But hidden tabs should still be navigable by ID
+	tb.SetActive("history")
+	if tb.ActiveTab().ID != "history" {
+		t.Errorf("expected history tab active, got %s", tb.ActiveTab().ID)
+	}
+
+	// And by index
+	tb.SetActiveByIndex(2)
+	if tb.ActiveTab().ID != "tools" {
+		t.Errorf("expected tools tab active, got %s", tb.ActiveTab().ID)
+	}
+}

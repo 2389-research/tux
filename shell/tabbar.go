@@ -16,6 +16,7 @@ type Tab struct {
 	Badge    string
 	Content  content.Content
 	Closable bool
+	Hidden   bool // Hidden tabs are accessible but not shown in tab bar
 }
 
 // TabBar manages tabs and renders the tab bar.
@@ -141,6 +142,10 @@ func (t *TabBar) View() string {
 	var tabs []string
 
 	for i, tab := range t.tabs {
+		if tab.Hidden {
+			continue
+		}
+
 		label := tab.Label
 		if tab.Badge != "" {
 			label += " " + tab.Badge
@@ -154,6 +159,10 @@ func (t *TabBar) View() string {
 		}
 
 		tabs = append(tabs, style.Render(label))
+	}
+
+	if len(tabs) == 0 {
+		return ""
 	}
 
 	return strings.Join(tabs, "  ")
