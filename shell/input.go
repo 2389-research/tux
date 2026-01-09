@@ -41,6 +41,20 @@ func (i *Input) Init() tea.Cmd {
 
 // Update handles input messages.
 func (i *Input) Update(msg tea.Msg) (*Input, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		if msg.Type == tea.KeyEnter {
+			value := i.model.Value()
+			if value != "" {
+				i.model.SetValue("")
+				return i, func() tea.Msg {
+					return InputSubmitMsg{Value: value}
+				}
+			}
+			return i, nil
+		}
+	}
+
 	var cmd tea.Cmd
 	i.model, cmd = i.model.Update(msg)
 	return i, cmd
