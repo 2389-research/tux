@@ -462,3 +462,26 @@ func TestAppKeepsErrorsOnErrorComplete(t *testing.T) {
 		t.Errorf("expected 1 error preserved, got %d", len(app.errors))
 	}
 }
+
+func TestAppHistoryNavigation(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+	app := New(agent)
+
+	// Add user messages
+	app.chat.AddUserMessage("hello")
+	app.chat.AddUserMessage("how are you")
+
+	// Get user messages for history
+	history := app.chat.UserMessages()
+
+	if len(history) != 2 {
+		t.Errorf("expected 2 history items, got %d", len(history))
+	}
+	if history[0] != "hello" {
+		t.Errorf("expected 'hello', got %q", history[0])
+	}
+	if history[1] != "how are you" {
+		t.Errorf("expected 'how are you', got %q", history[1])
+	}
+}

@@ -154,6 +154,11 @@ func New(agent Agent, opts ...Option) *App {
 	// Wire input submission to agent
 	shellCfg.OnInputSubmit = app.submitInput
 
+	// Wire history provider
+	shellCfg.HistoryProvider = func() []string {
+		return chat.UserMessages()
+	}
+
 	// Wire error display
 	shellCfg.OnShowErrors = func() {
 		app.mu.Lock()
