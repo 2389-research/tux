@@ -36,6 +36,9 @@ type toolItem struct {
 
 // NewToolsContent creates a new ToolsContent.
 func NewToolsContent(th theme.Theme) *ToolsContent {
+	if th == nil {
+		panic("NewToolsContent: nil theme")
+	}
 	return &ToolsContent{
 		theme: th,
 		items: make([]toolItem, 0),
@@ -95,11 +98,16 @@ func (c *ToolsContent) View() string {
 func (c *ToolsContent) Value() any {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return c.items
+	// Return a copy to prevent callers from mutating internal slice
+	result := make([]toolItem, len(c.items))
+	copy(result, c.items)
+	return result
 }
 
 // SetSize implements content.Content.
 func (c *ToolsContent) SetSize(width, height int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.width = width
 	c.height = height
 }

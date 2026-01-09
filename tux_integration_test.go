@@ -94,7 +94,7 @@ func TestConversationWithToolCall(t *testing.T) {
 	if !strings.Contains(toolsView, "read_file") {
 		t.Errorf("Tools should show tool call, got: %s", toolsView)
 	}
-	if !strings.Contains(toolsView, "\u2713") {
+	if !strings.Contains(toolsView, "✓") {
 		t.Errorf("Tools should show success marker, got: %s", toolsView)
 	}
 }

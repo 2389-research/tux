@@ -28,6 +28,9 @@ type chatMessage struct {
 
 // NewChatContent creates a new ChatContent.
 func NewChatContent(th theme.Theme) *ChatContent {
+	if th == nil {
+		panic("NewChatContent: nil theme")
+	}
 	return &ChatContent{
 		theme:    th,
 		messages: make([]chatMessage, 0),
@@ -76,11 +79,16 @@ func (c *ChatContent) View() string {
 func (c *ChatContent) Value() any {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return c.messages
+	// Return a copy to prevent callers from mutating internal slice
+	result := make([]chatMessage, len(c.messages))
+	copy(result, c.messages)
+	return result
 }
 
 // SetSize implements content.Content.
 func (c *ChatContent) SetSize(width, height int) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
 	c.width = width
 	c.height = height
 }
