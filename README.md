@@ -1,68 +1,96 @@
 # tux
 
-> Multi-language library for building multi-agent terminal interfaces
+> Terminal UI for multi-agent applications
 
 ## What is tux?
 
-tux provides the UI primitives for building terminal-based agent interfaces. It handles:
+tux provides a ready-to-use terminal interface for agent applications. Bring your agent backend, tux handles the UI:
 
-- **Shell** - Tabs, input, status bar
-- **Modals** - Wizards, approvals, forms
-- **Theming** - Consistent styling with user overrides
-- **Configuration** - Two-tier config (app defaults + user preferences)
-
-You bring the agent backend—tux handles the terminal UI.
+- **Chat tab** - Streaming conversation display
+- **Tools tab** - Tool call timeline with status
+- **Theming** - Dracula, NeoTerminal, or custom themes
+- **Tabs & Modals** - Extensible UI primitives
 
 ```
-mux (backend) → tux (frontend)
+your agent → tux.App → terminal UI
 ```
 
-## Implementations
-
-| Language | Package | Status | Framework |
-|----------|---------|--------|-----------|
-| **Go** | `github.com/2389-research/tux` | 🚧 In Progress | Bubble Tea |
-| **Rust** | `github.com/2389-research/tux-rs` | 📋 Planned | ratatui |
-| **TypeScript** | `@2389-research/tux` | 📋 Planned | ink |
-| **Python** | `pip install tux-ui` | 📋 Planned | Textual |
-
-## Documentation
-
-- **[Specification](./docs/spec/)** - Language-agnostic interface definitions
-  - [Architecture](./docs/spec/architecture.md)
-  - [Configuration](./docs/spec/configuration.md)
-- **[Implementations](./docs/implementations/)**
-  - [Go](./docs/implementations/go/)
-  - [Rust](./docs/implementations/rust/)
-  - [TypeScript](./docs/implementations/typescript/)
-  - [Python](./docs/implementations/python/)
-
-## Quick Example (Go)
+## Quick Start
 
 ```go
 package main
 
-import (
-    "github.com/2389-research/tux/shell"
-    "github.com/2389-research/tux/config"
-)
+import "github.com/2389-research/tux"
 
 func main() {
-    cfg, _ := config.Load("myapp", defaults)
-
-    s := shell.New(shell.Config{
-        Theme:   cfg.BuildTheme(),
-        Backend: myMuxBackend,
-    })
-
-    s.AddTab("chat", "Chat", chatContent)
-    s.Run()
+    app := tux.New(myAgent)
+    app.Run()
 }
 ```
 
+That's it. tux wires up:
+- Input submission → `agent.Run(ctx, prompt)`
+- Agent events → Chat/Tools display
+- Escape → Cancel running agent
+
+## Agent Interface
+
+Your agent implements three methods:
+
+```go
+type Agent interface {
+    // Run executes with the user's prompt
+    Run(ctx context.Context, prompt string) error
+
+    // Subscribe returns events as they happen
+    Subscribe() <-chan tux.Event
+
+    // Cancel stops the current run
+    Cancel()
+}
+```
+
+Events flow from your agent to the UI:
+
+```go
+// Streaming text → Chat tab
+Event{Type: EventText, Text: "Hello..."}
+
+// Tool calls → Tools tab
+Event{Type: EventToolCall, ToolID: "1", ToolName: "read_file", ToolParams: params}
+Event{Type: EventToolResult, ToolID: "1", ToolOutput: "contents", Success: true}
+
+// Completion → Finalize message
+Event{Type: EventComplete}
+```
+
+## Customization
+
+```go
+app := tux.New(agent,
+    tux.WithTheme(theme.NewNeoTerminalTheme()),
+    tux.WithTab(tux.TabDef{ID: "logs", Label: "Logs", Content: logsContent}),
+    tux.WithoutTab("tools"),  // Remove default tab
+)
+```
+
+## Low-Level API
+
+For full control, use the shell package directly:
+
+```go
+import "github.com/2389-research/tux/shell"
+
+s := shell.New(theme, shell.DefaultConfig())
+s.AddTab(shell.Tab{ID: "chat", Label: "Chat", Content: myContent})
+s.Run()
+```
+
+The shell package provides tabs, modals, forms, status bar, and input handling as composable primitives.
+
 ## User Configuration
 
-Users customize via `~/.config/{appname}/ui.toml`:
+Users can customize via `~/.config/{appname}/config.toml`:
 
 ```toml
 [theme]
@@ -71,18 +99,19 @@ name = "dracula"
 [theme.colors]
 primary = "#ff79c6"
 
-[keybindings]
-help = ["f1", "?"]
-
 [input]
-prefix = "λ "
+prefix = "→ "
 ```
 
-Same config format works across all language implementations.
+## Status
 
-## Origin
-
-Extracted from [hex](https://github.com/2389-research/hex) (coding agent) and [jeff](https://github.com/2389-research/jeff) (personal agent) to provide a shared foundation for multi-agent terminal interfaces.
+| Component | Status |
+|-----------|--------|
+| Agent shell (tux.App) | ✅ Working |
+| Shell primitives | ✅ Working |
+| Themes | ✅ Dracula, NeoTerminal |
+| Forms & Modals | ✅ Working |
+| Config loading | ✅ Working |
 
 ## License
 
