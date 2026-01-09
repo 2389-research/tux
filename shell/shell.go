@@ -44,6 +44,8 @@ type Config struct {
 	InputPlaceholder string
 	// OnInputSubmit is called when the user submits input (presses Enter).
 	OnInputSubmit func(value string)
+	// OnShowErrors is called when user presses Ctrl+E to show errors.
+	OnShowErrors func()
 }
 
 // DefaultConfig returns the default shell configuration.
@@ -130,6 +132,11 @@ func (s *Shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "ctrl+q":
 			return s, tea.Quit
+		case "ctrl+e":
+			if s.config.OnShowErrors != nil {
+				s.config.OnShowErrors()
+			}
+			return s, nil
 		}
 
 		// Tab index shortcuts (Alt+1 through Alt+9)

@@ -988,3 +988,23 @@ func TestShellTabLifecycleOnSwitch(t *testing.T) {
 		t.Errorf("expected tab2 activated, got %q", activated)
 	}
 }
+
+func TestShellCtrlEOpensErrorModal(t *testing.T) {
+	th := theme.NewDraculaTheme()
+	cfg := DefaultConfig()
+
+	errorModalOpened := false
+	cfg.OnShowErrors = func() {
+		errorModalOpened = true
+	}
+
+	s := New(th, cfg)
+	s.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+
+	// Send Ctrl+E
+	s.Update(tea.KeyMsg{Type: tea.KeyCtrlE})
+
+	if !errorModalOpened {
+		t.Error("ctrl+e should trigger OnShowErrors callback")
+	}
+}
