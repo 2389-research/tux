@@ -194,8 +194,11 @@ func (a *App) submitInput(prompt string) {
 	// Add user message to chat
 	a.chat.AddUserMessage(prompt)
 
-	// Create cancellable context (protected by mutex)
+	// Cancel any existing run before starting a new one
 	a.mu.Lock()
+	if a.cancel != nil {
+		a.cancel()
+	}
 	a.ctx, a.cancel = context.WithCancel(context.Background())
 	ctx := a.ctx
 	a.mu.Unlock()
