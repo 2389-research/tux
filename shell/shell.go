@@ -44,6 +44,10 @@ type Config struct {
 	InputPlaceholder string
 	// OnInputSubmit is called when the user submits input (presses Enter).
 	OnInputSubmit func(value string)
+	// OnShowErrors is called when user presses Ctrl+E to show errors.
+	OnShowErrors func()
+	// HistoryProvider returns the list of historical inputs (oldest to newest).
+	HistoryProvider func() []string
 }
 
 // DefaultConfig returns the default shell configuration.
@@ -85,6 +89,11 @@ func New(th theme.Theme, cfg Config) *Shell {
 		streaming:              NewStreamingController(),
 		focused:                FocusInput,
 		streamingStatusVisible: true,
+	}
+
+	// Wire history provider to input
+	if cfg.HistoryProvider != nil {
+		s.input.SetHistoryProvider(cfg.HistoryProvider)
 	}
 
 	return s
@@ -130,6 +139,11 @@ func (s *Shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "ctrl+q":
 			return s, tea.Quit
+		case "ctrl+e":
+			if s.config.OnShowErrors != nil {
+				s.config.OnShowErrors()
+			}
+			return s, nil
 		}
 
 		// Tab index shortcuts (Alt+1 through Alt+9)

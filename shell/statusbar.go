@@ -18,6 +18,9 @@ type Status struct {
 	Mode       string
 	Message    string
 	Hints      string
+	// Error display
+	ErrorText  string // Truncated error for status bar
+	ErrorCount int    // Number of accumulated errors
 }
 
 // StatusBar renders the status bar at the bottom of the shell.
@@ -64,6 +67,15 @@ func (s *StatusBar) View(width int) string {
 		statusText = styles.Error.Render("○ disconnected")
 	}
 	sections = append(sections, statusText)
+
+	// Error indicator (after connection status section)
+	if s.status.ErrorText != "" {
+		errorText := fmt.Sprintf("⚠ \"%s\"", s.status.ErrorText)
+		if s.status.ErrorCount > 1 {
+			errorText = fmt.Sprintf("⚠ \"%s\" +%d", s.status.ErrorText, s.status.ErrorCount-1)
+		}
+		sections = append(sections, styles.Error.Render(errorText))
+	}
 
 	// Streaming status
 	if s.streamingVisible && s.streaming != nil {
@@ -145,6 +157,23 @@ func (s *StatusBar) SetMessage(message string) {
 // SetHints sets the hints text.
 func (s *StatusBar) SetHints(hints string) {
 	s.status.Hints = hints
+}
+
+// SetError sets the error indicator with truncated text.
+func (s *StatusBar) SetError(text string, count int) {
+	// Truncate to ~10 runes (UTF-8 safe)
+	runes := []rune(text)
+	if len(runes) > 10 {
+		text = string(runes[:10]) + "..."
+	}
+	s.status.ErrorText = text
+	s.status.ErrorCount = count
+}
+
+// ClearError clears the error indicator.
+func (s *StatusBar) ClearError() {
+	s.status.ErrorText = ""
+	s.status.ErrorCount = 0
 }
 
 // SetStreamingController sets the streaming controller for status display.

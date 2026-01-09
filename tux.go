@@ -11,6 +11,7 @@ package tux
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/2389-research/tux/content"
@@ -38,13 +39,14 @@ type Agent interface {
 // Event represents an event from the agent.
 type Event struct {
 	Type       EventType
-	Text       string         // For EventText
-	ToolName   string         // For EventToolCall, EventToolResult
-	ToolID     string         // For EventToolCall, EventToolResult
-	ToolParams map[string]any // For EventToolCall
-	ToolOutput string         // For EventToolResult
-	Success    bool           // For EventToolResult
-	Error      error          // For EventError
+	Text       string                  // For EventText
+	ToolName   string                  // For EventToolCall, EventToolResult, EventApproval
+	ToolID     string                  // For EventToolCall, EventToolResult, EventApproval
+	ToolParams map[string]any          // For EventToolCall, EventApproval
+	ToolOutput string                  // For EventToolResult
+	Success    bool                    // For EventToolResult
+	Error      error                   // For EventError
+	Response   chan ApprovalDecision   // For EventApproval - send decision here
 }
 
 // EventType identifies the type of agent event.
@@ -56,6 +58,18 @@ const (
 	EventToolResult EventType = "tool_result"
 	EventComplete   EventType = "complete"
 	EventError      EventType = "error"
+	EventApproval   EventType = "approval"
+)
+
+// ApprovalDecision represents the user's decision on a tool approval.
+// Re-exported from shell package for API convenience.
+type ApprovalDecision = shell.ApprovalDecision
+
+const (
+	DecisionApprove     = shell.DecisionApprove
+	DecisionDeny        = shell.DecisionDeny
+	DecisionAlwaysAllow = shell.DecisionAlwaysAllow
+	DecisionNeverAllow  = shell.DecisionNeverAllow
 )
 
 // TabDef defines a custom tab.
@@ -121,6 +135,10 @@ type App struct {
 	mu     sync.Mutex
 	ctx    context.Context
 	cancel context.CancelFunc
+
+	// Error tracking
+	errors      []error
+	errorsInRun bool
 }
 
 // New creates a new App with the given agent and options.
@@ -149,6 +167,27 @@ func New(agent Agent, opts ...Option) *App {
 
 	// Wire input submission to agent
 	shellCfg.OnInputSubmit = app.submitInput
+
+	// Wire history provider
+	shellCfg.HistoryProvider = func() []string {
+		return chat.UserMessages()
+	}
+
+	// Wire error display
+	shellCfg.OnShowErrors = func() {
+		app.mu.Lock()
+		errs := make([]error, len(app.errors))
+		copy(errs, app.errors)
+		app.mu.Unlock()
+
+		if len(errs) > 0 {
+			modal := shell.NewErrorModal(shell.ErrorModalConfig{
+				Errors: errs,
+				Theme:  cfg.theme,
+			})
+			app.shell.PushModal(modal)
+		}
+	}
 
 	sh := shell.New(cfg.theme, shellCfg)
 	app.shell = sh
@@ -244,9 +283,50 @@ func (a *App) processEvent(event Event) {
 
 	case EventComplete:
 		a.chat.FinishAssistantMessage()
+		a.mu.Lock()
+		// Clear errors only if no errors in this run
+		if !a.errorsInRun {
+			a.errors = nil
+			a.shell.SetStatus(shell.Status{}) // Clear error indicator
+		}
+		a.errorsInRun = false // Reset for next run
+		a.mu.Unlock()
 
 	case EventError:
-		// TODO: Show error in status bar or modal
+		a.mu.Lock()
+		// Handle nil error defensively
+		err := event.Error
+		if err == nil {
+			err = fmt.Errorf("unknown error")
+		}
+		a.errors = append(a.errors, err)
+		a.errorsInRun = true
+		errCount := len(a.errors)
+		errText := a.errors[0].Error()
+		a.mu.Unlock()
+		// Update status bar outside mutex
+		a.shell.SetStatus(shell.Status{
+			ErrorText:  errText,
+			ErrorCount: errCount,
+		})
+
+	case EventApproval:
+		modal := shell.NewApprovalModal(shell.ApprovalModalConfig{
+			Tool: shell.ToolInfo{
+				ID:     event.ToolID,
+				Name:   event.ToolName,
+				Params: event.ToolParams,
+			},
+			OnDecision: func(decision shell.ApprovalDecision) {
+				if event.Response != nil {
+					// Send asynchronously to avoid blocking UI thread
+					go func(d shell.ApprovalDecision) {
+						event.Response <- d
+					}(decision)
+				}
+			},
+		})
+		a.shell.PushModal(modal)
 	}
 }
 

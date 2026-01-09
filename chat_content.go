@@ -126,3 +126,17 @@ func (c *ChatContent) FinishAssistantMessage() {
 		c.current.Reset()
 	}
 }
+
+// UserMessages returns all user message contents in order (oldest to newest).
+func (c *ChatContent) UserMessages() []string {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	var result []string
+	for _, msg := range c.messages {
+		if msg.role == "user" {
+			result = append(result, msg.content)
+		}
+	}
+	return result
+}

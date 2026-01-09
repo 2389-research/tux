@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/2389-research/tux/theme"
 )
 
@@ -408,5 +409,246 @@ func (m *mockAgentWithCancel) Subscribe() <-chan Event {
 func (m *mockAgentWithCancel) Cancel() {
 	if m.onCancel != nil {
 		m.onCancel()
+	}
+}
+
+func TestAppAccumulatesErrors(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+	app := New(agent)
+
+	// Process error events
+	app.processEvent(Event{Type: EventError, Error: fmt.Errorf("error 1")})
+	app.processEvent(Event{Type: EventError, Error: fmt.Errorf("error 2")})
+
+	if len(app.errors) != 2 {
+		t.Errorf("expected 2 errors, got %d", len(app.errors))
+	}
+}
+
+func TestAppClearsErrorsOnSuccess(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+	app := New(agent)
+
+	// Simulate a previous run with errors
+	app.processEvent(Event{Type: EventError, Error: fmt.Errorf("error 1")})
+	app.processEvent(Event{Type: EventComplete}) // Ends run with errors (errors preserved)
+
+	// Verify errors are still there from previous run
+	if len(app.errors) != 1 {
+		t.Errorf("expected 1 error after error run, got %d", len(app.errors))
+	}
+
+	// Now a successful completion (no errors in this run) should clear errors
+	app.processEvent(Event{Type: EventComplete})
+
+	if len(app.errors) != 0 {
+		t.Errorf("expected 0 errors after successful run, got %d", len(app.errors))
+	}
+}
+
+func TestAppKeepsErrorsOnErrorComplete(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+	app := New(agent)
+
+	// Process error then complete (simulating an error run)
+	app.processEvent(Event{Type: EventError, Error: fmt.Errorf("error 1")})
+	// Note: errorsInRun flag would be set automatically by processEvent
+	app.processEvent(Event{Type: EventComplete})
+
+	// Errors should NOT be cleared if there were errors in this run
+	if len(app.errors) != 1 {
+		t.Errorf("expected 1 error preserved, got %d", len(app.errors))
+	}
+}
+
+func TestAppHistoryNavigation(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+	app := New(agent)
+
+	// Add user messages
+	app.chat.AddUserMessage("hello")
+	app.chat.AddUserMessage("how are you")
+
+	// Get user messages for history
+	history := app.chat.UserMessages()
+
+	if len(history) != 2 {
+		t.Errorf("expected 2 history items, got %d", len(history))
+	}
+	if history[0] != "hello" {
+		t.Errorf("expected 'hello', got %q", history[0])
+	}
+	if history[1] != "how are you" {
+		t.Errorf("expected 'how are you', got %q", history[1])
+	}
+}
+
+func TestEventApprovalType(t *testing.T) {
+	// Verify EventApproval constant exists
+	if EventApproval != "approval" {
+		t.Errorf("expected EventApproval to be 'approval', got %q", EventApproval)
+	}
+}
+
+func TestEventHasResponseChannel(t *testing.T) {
+	responseChan := make(chan ApprovalDecision, 1)
+	event := Event{
+		Type:       EventApproval,
+		ToolID:     "tool-1",
+		ToolName:   "bash",
+		ToolParams: map[string]any{"command": "ls"},
+		Response:   responseChan,
+	}
+
+	// Send decision
+	go func() {
+		event.Response <- DecisionApprove
+	}()
+
+	// Receive decision
+	decision := <-event.Response
+	if decision != DecisionApprove {
+		t.Errorf("expected DecisionApprove, got %v", decision)
+	}
+}
+
+func TestApprovalDecisionConstants(t *testing.T) {
+	// Verify constants exist and have expected values
+	if DecisionApprove != 0 {
+		t.Error("DecisionApprove should be 0")
+	}
+	if DecisionDeny != 1 {
+		t.Error("DecisionDeny should be 1")
+	}
+	if DecisionAlwaysAllow != 2 {
+		t.Error("DecisionAlwaysAllow should be 2")
+	}
+	if DecisionNeverAllow != 3 {
+		t.Error("DecisionNeverAllow should be 3")
+	}
+}
+
+func TestAppShowsApprovalModal(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+	app := New(agent)
+
+	// Initialize shell size (required for modals)
+	app.shell.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+
+	// Create approval event with response channel
+	responseChan := make(chan ApprovalDecision, 1)
+	app.processEvent(Event{
+		Type:       EventApproval,
+		ToolID:     "tool-1",
+		ToolName:   "bash",
+		ToolParams: map[string]any{"command": "rm -rf /"},
+		Response:   responseChan,
+	})
+
+	// Modal should be shown
+	if !app.shell.HasModal() {
+		t.Error("approval event should show modal")
+	}
+}
+
+func TestAppApprovalSendsDecision(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+	app := New(agent)
+
+	app.shell.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+
+	responseChan := make(chan ApprovalDecision, 1)
+	app.processEvent(Event{
+		Type:       EventApproval,
+		ToolID:     "tool-1",
+		ToolName:   "bash",
+		ToolParams: map[string]any{"command": "ls"},
+		Response:   responseChan,
+	})
+
+	// Simulate user pressing Enter (approve is default selection)
+	app.shell.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+	// Should receive decision
+	select {
+	case decision := <-responseChan:
+		if decision != DecisionApprove {
+			t.Errorf("expected DecisionApprove, got %v", decision)
+		}
+	case <-time.After(100 * time.Millisecond):
+		t.Error("expected to receive decision on response channel")
+	}
+}
+
+func TestFullApprovalFlow(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+	app := New(agent)
+
+	// Initialize
+	app.shell.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+
+	// Simulate agent sending approval request
+	responseChan := make(chan ApprovalDecision, 1)
+	go func() {
+		// In real usage, agent blocks here waiting for decision
+		decision := <-responseChan
+		if decision == DecisionApprove {
+			// Agent would run the tool, then send result
+			events <- Event{
+				Type:       EventToolResult,
+				ToolID:     "tool-1",
+				ToolOutput: "success",
+				Success:    true,
+			}
+		} else {
+			events <- Event{
+				Type:       EventToolResult,
+				ToolID:     "tool-1",
+				ToolOutput: "denied by user",
+				Success:    false,
+			}
+		}
+	}()
+
+	// First, agent sends tool call (this adds tool to tools list)
+	app.processEvent(Event{
+		Type:       EventToolCall,
+		ToolID:     "tool-1",
+		ToolName:   "bash",
+		ToolParams: map[string]any{"command": "echo hello"},
+	})
+
+	// Process approval event
+	app.processEvent(Event{
+		Type:       EventApproval,
+		ToolID:     "tool-1",
+		ToolName:   "bash",
+		ToolParams: map[string]any{"command": "echo hello"},
+		Response:   responseChan,
+	})
+
+	// User denies (press 'n')
+	app.shell.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+
+	// Wait for agent goroutine to process decision and send result event
+	select {
+	case event := <-events:
+		// Process the tool result event from the agent
+		app.processEvent(event)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("expected agent to send tool result event")
+	}
+
+	// Tools should show denial
+	view := app.tools.View()
+	if !strings.Contains(view, "\u2717") {
+		t.Error("denied tool should show failure marker")
 	}
 }
