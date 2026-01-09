@@ -1008,3 +1008,27 @@ func TestShellCtrlEOpensErrorModal(t *testing.T) {
 		t.Error("ctrl+e should trigger OnShowErrors callback")
 	}
 }
+
+func TestShellHistoryProvider(t *testing.T) {
+	th := theme.NewDraculaTheme()
+	cfg := DefaultConfig()
+
+	history := []string{"prompt1", "prompt2"}
+	cfg.HistoryProvider = func() []string {
+		return history
+	}
+
+	s := New(th, cfg)
+
+	// Verify input has history provider set
+	// (internal implementation detail, but we test behavior)
+	s.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+
+	// Send up arrow while input focused
+	s.Update(tea.KeyMsg{Type: tea.KeyUp})
+
+	// Input should show last history item
+	if s.InputValue() != "prompt2" {
+		t.Errorf("expected 'prompt2', got %q", s.InputValue())
+	}
+}

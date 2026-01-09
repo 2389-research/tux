@@ -46,6 +46,8 @@ type Config struct {
 	OnInputSubmit func(value string)
 	// OnShowErrors is called when user presses Ctrl+E to show errors.
 	OnShowErrors func()
+	// HistoryProvider returns the list of historical inputs (oldest to newest).
+	HistoryProvider func() []string
 }
 
 // DefaultConfig returns the default shell configuration.
@@ -87,6 +89,11 @@ func New(th theme.Theme, cfg Config) *Shell {
 		streaming:              NewStreamingController(),
 		focused:                FocusInput,
 		streamingStatusVisible: true,
+	}
+
+	// Wire history provider to input
+	if cfg.HistoryProvider != nil {
+		s.input.SetHistoryProvider(cfg.HistoryProvider)
 	}
 
 	return s
