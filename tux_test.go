@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/2389-research/tux/theme"
 )
 
@@ -528,5 +529,59 @@ func TestApprovalDecisionConstants(t *testing.T) {
 	}
 	if DecisionNeverAllow != 3 {
 		t.Error("DecisionNeverAllow should be 3")
+	}
+}
+
+func TestAppShowsApprovalModal(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+	app := New(agent)
+
+	// Initialize shell size (required for modals)
+	app.shell.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+
+	// Create approval event with response channel
+	responseChan := make(chan ApprovalDecision, 1)
+	app.processEvent(Event{
+		Type:       EventApproval,
+		ToolID:     "tool-1",
+		ToolName:   "bash",
+		ToolParams: map[string]any{"command": "rm -rf /"},
+		Response:   responseChan,
+	})
+
+	// Modal should be shown
+	if !app.shell.HasModal() {
+		t.Error("approval event should show modal")
+	}
+}
+
+func TestAppApprovalSendsDecision(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+	app := New(agent)
+
+	app.shell.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+
+	responseChan := make(chan ApprovalDecision, 1)
+	app.processEvent(Event{
+		Type:       EventApproval,
+		ToolID:     "tool-1",
+		ToolName:   "bash",
+		ToolParams: map[string]any{"command": "ls"},
+		Response:   responseChan,
+	})
+
+	// Simulate user pressing Enter (approve is default selection)
+	app.shell.Update(tea.KeyMsg{Type: tea.KeyEnter})
+
+	// Should receive decision
+	select {
+	case decision := <-responseChan:
+		if decision != DecisionApprove {
+			t.Errorf("expected DecisionApprove, got %v", decision)
+		}
+	case <-time.After(100 * time.Millisecond):
+		t.Error("expected to receive decision on response channel")
 	}
 }

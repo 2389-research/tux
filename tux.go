@@ -304,6 +304,21 @@ func (a *App) processEvent(event Event) {
 			})
 		}
 		a.mu.Unlock()
+
+	case EventApproval:
+		modal := shell.NewApprovalModal(shell.ApprovalModalConfig{
+			Tool: shell.ToolInfo{
+				ID:     event.ToolID,
+				Name:   event.ToolName,
+				Params: event.ToolParams,
+			},
+			OnDecision: func(decision shell.ApprovalDecision) {
+				if event.Response != nil {
+					event.Response <- decision
+				}
+			},
+		})
+		a.shell.PushModal(modal)
 	}
 }
 
