@@ -213,10 +213,8 @@ func (a *App) submitInput(prompt string) {
 
 		// Run agent
 		if err := a.agent.Run(ctx, prompt); err != nil {
-			a.mu.Lock()
-			cancelled := a.ctx.Err() != nil
-			a.mu.Unlock()
-			if !cancelled {
+			// Use local ctx (not a.ctx) to check if THIS run was cancelled
+			if ctx.Err() == nil {
 				// Not cancelled, real error
 				a.processEvent(Event{Type: EventError, Error: err})
 			}
