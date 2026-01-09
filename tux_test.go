@@ -410,3 +410,55 @@ func (m *mockAgentWithCancel) Cancel() {
 		m.onCancel()
 	}
 }
+
+func TestAppAccumulatesErrors(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+	app := New(agent)
+
+	// Process error events
+	app.processEvent(Event{Type: EventError, Error: fmt.Errorf("error 1")})
+	app.processEvent(Event{Type: EventError, Error: fmt.Errorf("error 2")})
+
+	if len(app.errors) != 2 {
+		t.Errorf("expected 2 errors, got %d", len(app.errors))
+	}
+}
+
+func TestAppClearsErrorsOnSuccess(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+	app := New(agent)
+
+	// Simulate a previous run with errors
+	app.processEvent(Event{Type: EventError, Error: fmt.Errorf("error 1")})
+	app.processEvent(Event{Type: EventComplete}) // Ends run with errors (errors preserved)
+
+	// Verify errors are still there from previous run
+	if len(app.errors) != 1 {
+		t.Errorf("expected 1 error after error run, got %d", len(app.errors))
+	}
+
+	// Now a successful completion (no errors in this run) should clear errors
+	app.processEvent(Event{Type: EventComplete})
+
+	if len(app.errors) != 0 {
+		t.Errorf("expected 0 errors after successful run, got %d", len(app.errors))
+	}
+}
+
+func TestAppKeepsErrorsOnErrorComplete(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+	app := New(agent)
+
+	// Process error then complete (simulating an error run)
+	app.processEvent(Event{Type: EventError, Error: fmt.Errorf("error 1")})
+	// Note: errorsInRun flag would be set automatically by processEvent
+	app.processEvent(Event{Type: EventComplete})
+
+	// Errors should NOT be cleared if there were errors in this run
+	if len(app.errors) != 1 {
+		t.Errorf("expected 1 error preserved, got %d", len(app.errors))
+	}
+}

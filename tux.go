@@ -121,6 +121,10 @@ type App struct {
 	mu     sync.Mutex
 	ctx    context.Context
 	cancel context.CancelFunc
+
+	// Error tracking
+	errors      []error
+	errorsInRun bool
 }
 
 // New creates a new App with the given agent and options.
@@ -149,6 +153,22 @@ func New(agent Agent, opts ...Option) *App {
 
 	// Wire input submission to agent
 	shellCfg.OnInputSubmit = app.submitInput
+
+	// Wire error display
+	shellCfg.OnShowErrors = func() {
+		app.mu.Lock()
+		errs := make([]error, len(app.errors))
+		copy(errs, app.errors)
+		app.mu.Unlock()
+
+		if len(errs) > 0 {
+			modal := shell.NewErrorModal(shell.ErrorModalConfig{
+				Errors: errs,
+				Theme:  cfg.theme,
+			})
+			app.shell.PushModal(modal)
+		}
+	}
 
 	sh := shell.New(cfg.theme, shellCfg)
 	app.shell = sh
@@ -244,9 +264,28 @@ func (a *App) processEvent(event Event) {
 
 	case EventComplete:
 		a.chat.FinishAssistantMessage()
+		a.mu.Lock()
+		// Clear errors only if no errors in this run
+		if !a.errorsInRun {
+			a.errors = nil
+			a.shell.SetStatus(shell.Status{}) // Clear error indicator
+		}
+		a.errorsInRun = false // Reset for next run
+		a.mu.Unlock()
 
 	case EventError:
-		// TODO: Show error in status bar or modal
+		a.mu.Lock()
+		a.errors = append(a.errors, event.Error)
+		a.errorsInRun = true
+		// Update status bar
+		if len(a.errors) > 0 {
+			errText := a.errors[0].Error()
+			a.shell.SetStatus(shell.Status{
+				ErrorText:  errText,
+				ErrorCount: len(a.errors),
+			})
+		}
+		a.mu.Unlock()
 	}
 }
 
