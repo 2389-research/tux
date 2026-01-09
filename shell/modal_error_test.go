@@ -66,4 +66,9 @@ func TestErrorModalCtrlECloses(t *testing.T) {
 	if cmd == nil {
 		t.Error("ctrl+e should return command")
 	}
+	// Verify the command produces PopMsg (same as Escape)
+	msg := cmd()
+	if _, ok := msg.(PopMsg); !ok {
+		t.Errorf("expected PopMsg, got %T", msg)
+	}
 }

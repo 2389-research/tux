@@ -89,11 +89,30 @@ func (m *ErrorModal) Render(width, height int) string {
 	parts = append(parts, m.titleStyle.Render(title))
 	parts = append(parts, "")
 
-	// Error list
-	for i, err := range m.errors {
+	// Calculate available lines for errors (title + blank + footer + blank + border padding)
+	reservedLines := 6 // title, blank, footer text, blank, top/bottom border padding
+	availableLines := height - reservedLines
+	if availableLines < 1 {
+		availableLines = 1
+	}
+
+	// Error list (truncate if too many)
+	errorsToShow := m.errors
+	truncated := false
+	if len(errorsToShow) > availableLines {
+		errorsToShow = errorsToShow[:availableLines-1] // Leave room for "...and N more"
+		truncated = true
+	}
+
+	for i, err := range errorsToShow {
 		index := m.indexStyle.Render(fmt.Sprintf("%d.", i+1))
 		errText := m.errorStyle.Render(err.Error())
 		parts = append(parts, index+" "+errText)
+	}
+
+	if truncated {
+		remaining := len(m.errors) - len(errorsToShow)
+		parts = append(parts, m.indexStyle.Render(fmt.Sprintf("...and %d more", remaining)))
 	}
 
 	if len(m.errors) == 0 {
@@ -104,5 +123,11 @@ func (m *ErrorModal) Render(width, height int) string {
 	parts = append(parts, m.indexStyle.Render("Press Esc or Ctrl+E to close"))
 
 	content := strings.Join(parts, "\n")
-	return m.boxStyle.Width(width - 4).Render(content)
+
+	// Guard width to avoid negative values
+	safeWidth := width - 4
+	if safeWidth < 1 {
+		safeWidth = 1
+	}
+	return m.boxStyle.Width(safeWidth).Render(content)
 }

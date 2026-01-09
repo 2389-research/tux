@@ -77,7 +77,11 @@ func (i *Input) Update(msg tea.Msg) (*Input, tea.Cmd) {
 		case tea.KeyDown:
 			if i.historyProvider != nil && i.historyIndex != -1 {
 				history := i.historyProvider()
-				if i.historyIndex < len(history)-1 {
+				// Validate bounds in case history changed
+				if i.historyIndex >= len(history) {
+					i.historyIndex = -1
+					i.model.SetValue("")
+				} else if i.historyIndex < len(history)-1 {
 					i.historyIndex++
 					i.model.SetValue(history[i.historyIndex])
 					i.model.CursorEnd()

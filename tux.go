@@ -11,6 +11,7 @@ package tux
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"github.com/2389-research/tux/content"
@@ -293,17 +294,21 @@ func (a *App) processEvent(event Event) {
 
 	case EventError:
 		a.mu.Lock()
-		a.errors = append(a.errors, event.Error)
-		a.errorsInRun = true
-		// Update status bar
-		if len(a.errors) > 0 {
-			errText := a.errors[0].Error()
-			a.shell.SetStatus(shell.Status{
-				ErrorText:  errText,
-				ErrorCount: len(a.errors),
-			})
+		// Handle nil error defensively
+		err := event.Error
+		if err == nil {
+			err = fmt.Errorf("unknown error")
 		}
+		a.errors = append(a.errors, err)
+		a.errorsInRun = true
+		errCount := len(a.errors)
+		errText := a.errors[0].Error()
 		a.mu.Unlock()
+		// Update status bar outside mutex
+		a.shell.SetStatus(shell.Status{
+			ErrorText:  errText,
+			ErrorCount: errCount,
+		})
 
 	case EventApproval:
 		modal := shell.NewApprovalModal(shell.ApprovalModalConfig{
@@ -314,7 +319,10 @@ func (a *App) processEvent(event Event) {
 			},
 			OnDecision: func(decision shell.ApprovalDecision) {
 				if event.Response != nil {
-					event.Response <- decision
+					// Send asynchronously to avoid blocking UI thread
+					go func(d shell.ApprovalDecision) {
+						event.Response <- d
+					}(decision)
 				}
 			},
 		})

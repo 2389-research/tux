@@ -161,9 +161,10 @@ func (s *StatusBar) SetHints(hints string) {
 
 // SetError sets the error indicator with truncated text.
 func (s *StatusBar) SetError(text string, count int) {
-	// Truncate to ~10 chars
-	if len(text) > 10 {
-		text = text[:10] + "..."
+	// Truncate to ~10 runes (UTF-8 safe)
+	runes := []rune(text)
+	if len(runes) > 10 {
+		text = string(runes[:10]) + "..."
 	}
 	s.status.ErrorText = text
 	s.status.ErrorCount = count
