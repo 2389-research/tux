@@ -249,6 +249,7 @@ func (a *App) processEvent(event Event) {
 // Thread-safe: acquires mutex before accessing ctx/cancel.
 func (a *App) cancelRun() {
 	a.mu.Lock()
+	shouldCancel := a.cancel != nil
 	if a.cancel != nil {
 		a.cancel()
 		a.cancel = nil
@@ -256,7 +257,9 @@ func (a *App) cancelRun() {
 	a.mu.Unlock()
 
 	// Call agent.Cancel() outside the mutex to avoid blocking while holding lock
-	a.agent.Cancel()
+	if shouldCancel {
+		a.agent.Cancel()
+	}
 }
 
 // isRunning returns true if an agent run is in progress.

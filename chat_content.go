@@ -11,14 +11,19 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// Compile-time check that ChatContent implements content.Content.
+var _ content.Content = (*ChatContent)(nil)
+
 // ChatContent displays the conversation in the Chat tab.
 type ChatContent struct {
-	mu       sync.Mutex
-	theme    theme.Theme
-	messages []chatMessage
-	current  strings.Builder // Current streaming message
-	width    int
-	height   int
+	mu             sync.Mutex
+	theme          theme.Theme
+	messages       []chatMessage
+	current        strings.Builder // Current streaming message
+	width          int
+	height         int
+	userStyle      lipgloss.Style
+	assistantStyle lipgloss.Style
 }
 
 type chatMessage struct {
@@ -32,8 +37,10 @@ func NewChatContent(th theme.Theme) *ChatContent {
 		panic("NewChatContent: nil theme")
 	}
 	return &ChatContent{
-		theme:    th,
-		messages: make([]chatMessage, 0),
+		theme:          th,
+		messages:       make([]chatMessage, 0),
+		userStyle:      lipgloss.NewStyle().Foreground(th.UserColor()),
+		assistantStyle: lipgloss.NewStyle().Foreground(th.AssistantColor()),
 	}
 }
 
@@ -54,22 +61,19 @@ func (c *ChatContent) View() string {
 
 	var parts []string
 
-	userStyle := lipgloss.NewStyle().Foreground(c.theme.UserColor())
-	assistantStyle := lipgloss.NewStyle().Foreground(c.theme.AssistantColor())
-
 	for _, msg := range c.messages {
 		var style lipgloss.Style
 		if msg.role == "user" {
-			style = userStyle
+			style = c.userStyle
 		} else {
-			style = assistantStyle
+			style = c.assistantStyle
 		}
 		parts = append(parts, style.Render(msg.content))
 	}
 
 	// Add current streaming message if any
 	if c.current.Len() > 0 {
-		parts = append(parts, assistantStyle.Render(c.current.String()))
+		parts = append(parts, c.assistantStyle.Render(c.current.String()))
 	}
 
 	return strings.Join(parts, "\n\n")
