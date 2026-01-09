@@ -585,3 +585,70 @@ func TestAppApprovalSendsDecision(t *testing.T) {
 		t.Error("expected to receive decision on response channel")
 	}
 }
+
+func TestFullApprovalFlow(t *testing.T) {
+	events := make(chan Event, 10)
+	agent := &mockAgent{events: events}
+	app := New(agent)
+
+	// Initialize
+	app.shell.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+
+	// Simulate agent sending approval request
+	responseChan := make(chan ApprovalDecision, 1)
+	go func() {
+		// In real usage, agent blocks here waiting for decision
+		decision := <-responseChan
+		if decision == DecisionApprove {
+			// Agent would run the tool, then send result
+			events <- Event{
+				Type:       EventToolResult,
+				ToolID:     "tool-1",
+				ToolOutput: "success",
+				Success:    true,
+			}
+		} else {
+			events <- Event{
+				Type:       EventToolResult,
+				ToolID:     "tool-1",
+				ToolOutput: "denied by user",
+				Success:    false,
+			}
+		}
+	}()
+
+	// First, agent sends tool call (this adds tool to tools list)
+	app.processEvent(Event{
+		Type:       EventToolCall,
+		ToolID:     "tool-1",
+		ToolName:   "bash",
+		ToolParams: map[string]any{"command": "echo hello"},
+	})
+
+	// Process approval event
+	app.processEvent(Event{
+		Type:       EventApproval,
+		ToolID:     "tool-1",
+		ToolName:   "bash",
+		ToolParams: map[string]any{"command": "echo hello"},
+		Response:   responseChan,
+	})
+
+	// User denies (press 'n')
+	app.shell.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'n'}})
+
+	// Wait for agent goroutine to process decision and send result event
+	select {
+	case event := <-events:
+		// Process the tool result event from the agent
+		app.processEvent(event)
+	case <-time.After(100 * time.Millisecond):
+		t.Fatal("expected agent to send tool result event")
+	}
+
+	// Tools should show denial
+	view := app.tools.View()
+	if !strings.Contains(view, "\u2717") {
+		t.Error("denied tool should show failure marker")
+	}
+}
