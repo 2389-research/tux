@@ -485,3 +485,48 @@ func TestAppHistoryNavigation(t *testing.T) {
 		t.Errorf("expected 'how are you', got %q", history[1])
 	}
 }
+
+func TestEventApprovalType(t *testing.T) {
+	// Verify EventApproval constant exists
+	if EventApproval != "approval" {
+		t.Errorf("expected EventApproval to be 'approval', got %q", EventApproval)
+	}
+}
+
+func TestEventHasResponseChannel(t *testing.T) {
+	responseChan := make(chan ApprovalDecision, 1)
+	event := Event{
+		Type:       EventApproval,
+		ToolID:     "tool-1",
+		ToolName:   "bash",
+		ToolParams: map[string]any{"command": "ls"},
+		Response:   responseChan,
+	}
+
+	// Send decision
+	go func() {
+		event.Response <- DecisionApprove
+	}()
+
+	// Receive decision
+	decision := <-event.Response
+	if decision != DecisionApprove {
+		t.Errorf("expected DecisionApprove, got %v", decision)
+	}
+}
+
+func TestApprovalDecisionConstants(t *testing.T) {
+	// Verify constants exist and have expected values
+	if DecisionApprove != 0 {
+		t.Error("DecisionApprove should be 0")
+	}
+	if DecisionDeny != 1 {
+		t.Error("DecisionDeny should be 1")
+	}
+	if DecisionAlwaysAllow != 2 {
+		t.Error("DecisionAlwaysAllow should be 2")
+	}
+	if DecisionNeverAllow != 3 {
+		t.Error("DecisionNeverAllow should be 3")
+	}
+}

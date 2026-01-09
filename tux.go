@@ -38,13 +38,14 @@ type Agent interface {
 // Event represents an event from the agent.
 type Event struct {
 	Type       EventType
-	Text       string         // For EventText
-	ToolName   string         // For EventToolCall, EventToolResult
-	ToolID     string         // For EventToolCall, EventToolResult
-	ToolParams map[string]any // For EventToolCall
-	ToolOutput string         // For EventToolResult
-	Success    bool           // For EventToolResult
-	Error      error          // For EventError
+	Text       string                  // For EventText
+	ToolName   string                  // For EventToolCall, EventToolResult, EventApproval
+	ToolID     string                  // For EventToolCall, EventToolResult, EventApproval
+	ToolParams map[string]any          // For EventToolCall, EventApproval
+	ToolOutput string                  // For EventToolResult
+	Success    bool                    // For EventToolResult
+	Error      error                   // For EventError
+	Response   chan ApprovalDecision   // For EventApproval - send decision here
 }
 
 // EventType identifies the type of agent event.
@@ -56,6 +57,18 @@ const (
 	EventToolResult EventType = "tool_result"
 	EventComplete   EventType = "complete"
 	EventError      EventType = "error"
+	EventApproval   EventType = "approval"
+)
+
+// ApprovalDecision represents the user's decision on a tool approval.
+// Re-exported from shell package for API convenience.
+type ApprovalDecision = shell.ApprovalDecision
+
+const (
+	DecisionApprove     = shell.DecisionApprove
+	DecisionDeny        = shell.DecisionDeny
+	DecisionAlwaysAllow = shell.DecisionAlwaysAllow
+	DecisionNeverAllow  = shell.DecisionNeverAllow
 )
 
 // TabDef defines a custom tab.
