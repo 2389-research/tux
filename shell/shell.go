@@ -42,6 +42,8 @@ type Config struct {
 	InputPrefix string
 	// InputPlaceholder is shown when input is empty.
 	InputPlaceholder string
+	// OnInputSubmit is called when the user submits input (presses Enter).
+	OnInputSubmit func(value string)
 }
 
 // DefaultConfig returns the default shell configuration.
@@ -165,6 +167,11 @@ func (s *Shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case PushMsg:
 		s.modalManager.Push(msg.Modal)
+
+	case InputSubmitMsg:
+		if s.config.OnInputSubmit != nil {
+			s.config.OnInputSubmit(msg.Value)
+		}
 	}
 
 	return s, tea.Batch(cmds...)

@@ -135,7 +135,6 @@ func New(agent Agent, opts ...Option) *App {
 	}
 
 	shellCfg := shell.DefaultConfig()
-	sh := shell.New(cfg.theme, shellCfg)
 
 	// Create content
 	chat := NewChatContent(cfg.theme)
@@ -143,11 +142,16 @@ func New(agent Agent, opts ...Option) *App {
 
 	app := &App{
 		agent:  agent,
-		shell:  sh,
 		config: cfg,
 		chat:   chat,
 		tools:  tools,
 	}
+
+	// Wire input submission to agent
+	shellCfg.OnInputSubmit = app.submitInput
+
+	sh := shell.New(cfg.theme, shellCfg)
+	app.shell = sh
 
 	// Add default tabs (unless removed)
 	if !cfg.removedTabs["chat"] {
