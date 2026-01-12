@@ -90,6 +90,7 @@ type appConfig struct {
 	customTabs     []TabDef
 	removedTabs    map[string]bool
 	helpCategories []shell.Category
+	autocomplete   *shell.Autocomplete
 }
 
 // defaultAppConfig returns the default configuration with Dracula theme
@@ -133,6 +134,38 @@ type HelpBinding = shell.Binding
 func WithHelpCategories(categories ...HelpCategory) Option {
 	return func(c *appConfig) {
 		c.helpCategories = categories
+	}
+}
+
+// Autocomplete is a re-export of shell.Autocomplete for API convenience.
+type Autocomplete = shell.Autocomplete
+
+// Completion is a re-export of shell.Completion for API convenience.
+type Completion = shell.Completion
+
+// CompletionProvider is a re-export of shell.CompletionProvider for API convenience.
+type CompletionProvider = shell.CompletionProvider
+
+// NewAutocomplete creates a new autocomplete component.
+func NewAutocomplete() *Autocomplete {
+	return shell.NewAutocomplete()
+}
+
+// NewCommandProvider creates a command completion provider.
+func NewCommandProvider(commands []Completion) *shell.CommandProvider {
+	return shell.NewCommandProvider(commands)
+}
+
+// NewHistoryProvider creates a history completion provider.
+func NewHistoryProvider(history []string) *shell.HistoryProvider {
+	return shell.NewHistoryProvider(history)
+}
+
+// WithAutocomplete sets the autocomplete component for the input.
+// When set, Tab triggers completion suggestions.
+func WithAutocomplete(ac *Autocomplete) Option {
+	return func(c *appConfig) {
+		c.autocomplete = ac
 	}
 }
 
@@ -206,6 +239,9 @@ func New(agent Agent, opts ...Option) *App {
 
 	// Wire help categories
 	shellCfg.HelpCategories = cfg.helpCategories
+
+	// Wire autocomplete
+	shellCfg.Autocomplete = cfg.autocomplete
 
 	sh := shell.New(cfg.theme, shellCfg)
 	app.shell = sh

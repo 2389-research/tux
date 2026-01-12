@@ -15,6 +15,9 @@ type Input struct {
 	width           int
 	historyProvider func() []string
 	historyIndex    int // -1 means not navigating history
+
+	// Autocomplete
+	autocomplete *Autocomplete
 }
 
 // NewInput creates a new input component.
@@ -46,12 +49,51 @@ func (i *Input) Init() tea.Cmd {
 func (i *Input) Update(msg tea.Msg) (*Input, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		// Handle autocomplete keys first
+		if i.autocomplete != nil && i.autocomplete.Active() {
+			switch msg.Type {
+			case tea.KeyTab:
+				i.autocomplete.Next()
+				return i, nil
+			case tea.KeyShiftTab:
+				i.autocomplete.Previous()
+				return i, nil
+			case tea.KeyEnter:
+				// Accept selected completion
+				if selected := i.autocomplete.GetSelected(); selected != nil {
+					i.model.SetValue(selected.Value)
+					i.model.CursorEnd()
+					i.autocomplete.Hide()
+					return i, nil
+				}
+			case tea.KeyEsc:
+				i.autocomplete.Hide()
+				return i, nil
+			case tea.KeyUp:
+				i.autocomplete.Previous()
+				return i, nil
+			case tea.KeyDown:
+				i.autocomplete.Next()
+				return i, nil
+			}
+		}
+
 		switch msg.Type {
+		case tea.KeyTab:
+			// Trigger autocomplete
+			if i.autocomplete != nil {
+				i.autocomplete.ShowAuto(i.model.Value())
+			}
+			return i, nil
+
 		case tea.KeyEnter:
 			value := i.model.Value()
 			if value != "" {
 				i.model.SetValue("")
 				i.historyIndex = -1 // Reset history navigation
+				if i.autocomplete != nil {
+					i.autocomplete.Hide()
+				}
 				return i, func() tea.Msg {
 					return InputSubmitMsg{Value: value}
 				}
@@ -92,6 +134,20 @@ func (i *Input) Update(msg tea.Msg) (*Input, tea.Cmd) {
 				}
 			}
 			return i, nil
+
+		case tea.KeyEsc:
+			// Hide autocomplete on Esc
+			if i.autocomplete != nil {
+				i.autocomplete.Hide()
+			}
+			return i, nil
+		}
+
+		// Hide autocomplete when typing (will re-trigger on Tab)
+		if i.autocomplete != nil && i.autocomplete.Active() {
+			if len(msg.Runes) > 0 || msg.Type == tea.KeyBackspace {
+				i.autocomplete.Hide()
+			}
 		}
 	}
 
@@ -103,7 +159,17 @@ func (i *Input) Update(msg tea.Msg) (*Input, tea.Cmd) {
 // View renders the input.
 func (i *Input) View() string {
 	styles := i.theme.Styles()
-	return styles.Input.Width(i.width - 4).Render(i.model.View())
+	inputView := styles.Input.Width(i.width - 4).Render(i.model.View())
+
+	// Show autocomplete dropdown if active
+	if i.autocomplete != nil && i.autocomplete.Active() {
+		acView := i.autocomplete.View()
+		if acView != "" {
+			return inputView + "\n" + acView
+		}
+	}
+
+	return inputView
 }
 
 // Value returns the current input value.
@@ -126,6 +192,17 @@ func (i *Input) SetWidth(width int) {
 // History should be ordered oldest to newest.
 func (i *Input) SetHistoryProvider(provider func() []string) {
 	i.historyProvider = provider
+}
+
+// SetAutocomplete sets the autocomplete component for this input.
+// When set, Tab triggers autocomplete and arrow keys navigate completions.
+func (i *Input) SetAutocomplete(ac *Autocomplete) {
+	i.autocomplete = ac
+}
+
+// Autocomplete returns the autocomplete component, if set.
+func (i *Input) Autocomplete() *Autocomplete {
+	return i.autocomplete
 }
 
 // Focus focuses the input.

@@ -57,6 +57,9 @@ type Config struct {
 	// HelpCategories defines the keybinding categories shown in the help overlay.
 	// If nil, the help overlay (?) is disabled.
 	HelpCategories []Category
+	// Autocomplete is the autocomplete component for the input.
+	// If set, Tab triggers completion suggestions.
+	Autocomplete *Autocomplete
 }
 
 // DefaultConfig returns the default shell configuration.
@@ -103,6 +106,11 @@ func New(th theme.Theme, cfg Config) *Shell {
 	// Wire history provider to input
 	if cfg.HistoryProvider != nil {
 		s.input.SetHistoryProvider(cfg.HistoryProvider)
+	}
+
+	// Wire autocomplete to input
+	if cfg.Autocomplete != nil {
+		s.input.SetAutocomplete(cfg.Autocomplete)
 	}
 
 	return s
