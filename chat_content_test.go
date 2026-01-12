@@ -105,3 +105,69 @@ func TestChatContentValue(t *testing.T) {
 		}
 	}
 }
+
+func TestChatContentViewport(t *testing.T) {
+	th := theme.NewDraculaTheme()
+	chat := NewChatContent(th)
+
+	// Set size to initialize viewport
+	chat.SetSize(80, 10)
+
+	// Add some content
+	chat.AddUserMessage("Hello")
+	chat.AppendText("Response")
+	chat.FinishAssistantMessage()
+
+	// View should work through viewport
+	view := chat.View()
+	if !strings.Contains(view, "Hello") {
+		t.Errorf("View should contain 'Hello', got: %s", view)
+	}
+	if !strings.Contains(view, "Response") {
+		t.Errorf("View should contain 'Response', got: %s", view)
+	}
+}
+
+func TestChatContentAutoScroll(t *testing.T) {
+	th := theme.NewDraculaTheme()
+	chat := NewChatContent(th)
+
+	// Set size to initialize viewport
+	chat.SetSize(80, 5)
+
+	// Add many messages to exceed viewport height
+	for i := 0; i < 20; i++ {
+		chat.AddUserMessage("Message " + string(rune('A'+i)))
+	}
+
+	// autoScroll should be true by default
+	chat.mu.Lock()
+	autoScroll := chat.autoScroll
+	chat.mu.Unlock()
+
+	if !autoScroll {
+		t.Error("autoScroll should be true by default")
+	}
+}
+
+func TestChatContentClearResetsAutoScroll(t *testing.T) {
+	th := theme.NewDraculaTheme()
+	chat := NewChatContent(th)
+
+	// Set size and disable auto-scroll
+	chat.SetSize(80, 10)
+	chat.mu.Lock()
+	chat.autoScroll = false
+	chat.mu.Unlock()
+
+	// Clear should reset auto-scroll
+	chat.Clear()
+
+	chat.mu.Lock()
+	autoScroll := chat.autoScroll
+	chat.mu.Unlock()
+
+	if !autoScroll {
+		t.Error("Clear should reset autoScroll to true")
+	}
+}
