@@ -91,6 +91,7 @@ type appConfig struct {
 	removedTabs    map[string]bool
 	helpCategories []shell.Category
 	autocomplete   *shell.Autocomplete
+	onQuickActions func()
 }
 
 // defaultAppConfig returns the default configuration with Dracula theme
@@ -146,6 +147,20 @@ type Completion = shell.Completion
 // CompletionProvider is a re-export of shell.CompletionProvider for API convenience.
 type CompletionProvider = shell.CompletionProvider
 
+// ListItem is a re-export of shell.ListItem for API convenience.
+type ListItem = shell.ListItem
+
+// ListModal is a re-export of shell.ListModal for API convenience.
+type ListModal = shell.ListModal
+
+// ListModalConfig is a re-export of shell.ListModalConfig for API convenience.
+type ListModalConfig = shell.ListModalConfig
+
+// NewListModal creates a new list modal for command palette functionality.
+func NewListModal(cfg ListModalConfig) *ListModal {
+	return shell.NewListModal(cfg)
+}
+
 // NewAutocomplete creates a new autocomplete component.
 func NewAutocomplete() *Autocomplete {
 	return shell.NewAutocomplete()
@@ -166,6 +181,14 @@ func NewHistoryProvider(history []string) *shell.HistoryProvider {
 func WithAutocomplete(ac *Autocomplete) Option {
 	return func(c *appConfig) {
 		c.autocomplete = ac
+	}
+}
+
+// WithQuickActions sets the callback for the ':' key quick actions.
+// When set, pressing ':' with empty input opens quick actions.
+func WithQuickActions(fn func()) Option {
+	return func(c *appConfig) {
+		c.onQuickActions = fn
 	}
 }
 
@@ -242,6 +265,9 @@ func New(agent Agent, opts ...Option) *App {
 
 	// Wire autocomplete
 	shellCfg.Autocomplete = cfg.autocomplete
+
+	// Wire quick actions
+	shellCfg.OnQuickActions = cfg.onQuickActions
 
 	sh := shell.New(cfg.theme, shellCfg)
 	app.shell = sh
@@ -438,4 +464,21 @@ func (a *App) AddChatUserMessage(content string) {
 // Use this when restoring a previous session.
 func (a *App) AddChatAssistantMessage(content string) {
 	a.chat.AddAssistantMessage(content)
+}
+
+// PushModal pushes a modal onto the modal stack.
+// Use this to show command palettes, dialogs, or other modal overlays.
+func (a *App) PushModal(m shell.Modal) {
+	a.shell.PushModal(m)
+}
+
+// PopModal pops the top modal from the stack.
+func (a *App) PopModal() {
+	a.shell.PopModal()
+}
+
+// SetInputValue sets the input text.
+// Use this when applying quick action values to the input.
+func (a *App) SetInputValue(value string) {
+	a.shell.SetInputValue(value)
 }

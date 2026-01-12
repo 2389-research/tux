@@ -52,6 +52,9 @@ type Config struct {
 	OnInputSubmit func(value string)
 	// OnShowErrors is called when user presses Ctrl+E to show errors.
 	OnShowErrors func()
+	// OnQuickActions is called when user presses ':' to open quick actions.
+	// If nil, the ':' key is passed through to input normally.
+	OnQuickActions func()
 	// HistoryProvider returns the list of historical inputs (oldest to newest).
 	HistoryProvider func() []string
 	// HelpCategories defines the keybinding categories shown in the help overlay.
@@ -182,6 +185,12 @@ func (s *Shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					Theme: s.theme,
 				})
 				s.PushModal(modal)
+				return s, nil
+			}
+		case ":":
+			// Open quick actions if configured and input is empty
+			if s.config.OnQuickActions != nil && s.input.Value() == "" && !s.modalManager.HasActive() {
+				s.config.OnQuickActions()
 				return s, nil
 			}
 		}
