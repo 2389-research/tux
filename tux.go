@@ -86,13 +86,16 @@ type Option func(*appConfig)
 
 // appConfig holds configuration for the App.
 type appConfig struct {
-	theme          theme.Theme
-	customTabs     []TabDef
-	removedTabs    map[string]bool
-	helpCategories []shell.Category
-	autocomplete   *shell.Autocomplete
-	suggestions    *shell.Suggestions
-	onQuickActions func()
+	theme            theme.Theme
+	customTabs       []TabDef
+	removedTabs      map[string]bool
+	helpCategories   []shell.Category
+	autocomplete     *shell.Autocomplete
+	suggestions      *shell.Suggestions
+	onQuickActions   func()
+	onClearChat      func()
+	onSave           func()
+	onToggleFavorite func()
 }
 
 // defaultAppConfig returns the default configuration with Dracula theme
@@ -215,6 +218,27 @@ func WithSuggestions(s *Suggestions) Option {
 	}
 }
 
+// WithClearChat sets the callback for Ctrl+L to clear chat.
+func WithClearChat(fn func()) Option {
+	return func(c *appConfig) {
+		c.onClearChat = fn
+	}
+}
+
+// WithSave sets the callback for Ctrl+S to save.
+func WithSave(fn func()) Option {
+	return func(c *appConfig) {
+		c.onSave = fn
+	}
+}
+
+// WithToggleFavorite sets the callback for Ctrl+F to toggle favorite.
+func WithToggleFavorite(fn func()) Option {
+	return func(c *appConfig) {
+		c.onToggleFavorite = fn
+	}
+}
+
 // App is the main agent TUI application.
 type App struct {
 	agent  Agent
@@ -294,6 +318,11 @@ func New(agent Agent, opts ...Option) *App {
 
 	// Wire quick actions
 	shellCfg.OnQuickActions = cfg.onQuickActions
+
+	// Wire additional shortcuts
+	shellCfg.OnClearChat = cfg.onClearChat
+	shellCfg.OnSave = cfg.onSave
+	shellCfg.OnToggleFavorite = cfg.onToggleFavorite
 
 	sh := shell.New(cfg.theme, shellCfg)
 	app.shell = sh

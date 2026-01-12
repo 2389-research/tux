@@ -55,6 +55,12 @@ type Config struct {
 	// OnQuickActions is called when user presses ':' to open quick actions.
 	// If nil, the ':' key is passed through to input normally.
 	OnQuickActions func()
+	// OnClearChat is called when user presses Ctrl+L to clear the chat.
+	OnClearChat func()
+	// OnSave is called when user presses Ctrl+S to save.
+	OnSave func()
+	// OnToggleFavorite is called when user presses Ctrl+F to toggle favorite.
+	OnToggleFavorite func()
 	// HistoryProvider returns the list of historical inputs (oldest to newest).
 	HistoryProvider func() []string
 	// HelpCategories defines the keybinding categories shown in the help overlay.
@@ -170,6 +176,21 @@ func (s *Shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+e":
 			if s.config.OnShowErrors != nil {
 				s.config.OnShowErrors()
+			}
+			return s, nil
+		case "ctrl+l":
+			if s.config.OnClearChat != nil {
+				s.config.OnClearChat()
+			}
+			return s, nil
+		case "ctrl+s":
+			if s.config.OnSave != nil {
+				s.config.OnSave()
+			}
+			return s, nil
+		case "ctrl+f":
+			if s.config.OnToggleFavorite != nil {
+				s.config.OnToggleFavorite()
 			}
 			return s, nil
 		case "esc":
