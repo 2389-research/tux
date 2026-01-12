@@ -1032,3 +1032,30 @@ func TestShellHistoryProvider(t *testing.T) {
 		t.Errorf("expected 'prompt2', got %q", s.InputValue())
 	}
 }
+
+func TestShellSendBeforeRunIsNoOp(t *testing.T) {
+	th := theme.NewDraculaTheme()
+	s := New(th, DefaultConfig())
+
+	// Send before Run should not panic
+	s.Send(RefreshMsg{})
+	// If we get here without panic, test passes
+}
+
+func TestShellRefreshMsgTriggersUpdate(t *testing.T) {
+	th := theme.NewDraculaTheme()
+	s := New(th, DefaultConfig())
+	s.Update(tea.WindowSizeMsg{Width: 80, Height: 24})
+
+	// Set status externally
+	s.SetStatus(Status{ErrorText: "test error", ErrorCount: 1})
+
+	// Send refresh message - should be handled without error
+	result, cmd := s.Update(RefreshMsg{})
+	if result == nil {
+		t.Error("Update should return shell")
+	}
+	if cmd != nil {
+		t.Error("RefreshMsg should not produce commands")
+	}
+}

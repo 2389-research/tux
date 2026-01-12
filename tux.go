@@ -328,6 +328,9 @@ func (a *App) processEvent(event Event) {
 		})
 		a.shell.PushModal(modal)
 	}
+
+	// Trigger UI refresh after external state change
+	a.shell.Send(shell.RefreshMsg{})
 }
 
 // cancelRun cancels the current agent run.

@@ -9,6 +9,9 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// RefreshMsg triggers a re-render when external state changes.
+type RefreshMsg struct{}
+
 // Shell is the top-level container that manages tabs, modals, input, and status.
 type Shell struct {
 	// Components
@@ -24,6 +27,9 @@ type Shell struct {
 	focused                FocusTarget
 	ready                  bool
 	streamingStatusVisible bool
+
+	// Runtime
+	program *tea.Program
 
 	// Configuration
 	theme  theme.Theme
@@ -186,6 +192,9 @@ func (s *Shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if s.config.OnInputSubmit != nil {
 			s.config.OnInputSubmit(msg.Value)
 		}
+
+	case RefreshMsg:
+		// Just triggers re-render - state already updated externally
 	}
 
 	return s, tea.Batch(cmds...)
@@ -341,9 +350,18 @@ func (s *Shell) SetStreamingStatusVisible(visible bool) {
 
 // Run starts the shell as a Bubble Tea program.
 func (s *Shell) Run() error {
-	p := tea.NewProgram(s, tea.WithAltScreen())
-	_, err := p.Run()
+	s.program = tea.NewProgram(s, tea.WithAltScreen())
+	_, err := s.program.Run()
 	return err
+}
+
+// Send sends a message to the shell's program to trigger an update.
+// This is used to notify the UI of external state changes.
+// Safe to call before Run() - will be a no-op.
+func (s *Shell) Send(msg tea.Msg) {
+	if s.program != nil {
+		s.program.Send(msg)
+	}
 }
 
 // keyMsgToShortcut converts a tea.KeyMsg to a shortcut string.
