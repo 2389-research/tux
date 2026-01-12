@@ -14,6 +14,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/2389-research/tux/config"
 	"github.com/2389-research/tux/content"
 	"github.com/2389-research/tux/shell"
 	"github.com/2389-research/tux/theme"
@@ -96,6 +97,9 @@ type appConfig struct {
 	onClearChat      func()
 	onSave           func()
 	onToggleFavorite func()
+	// Input config
+	inputPrefix      string
+	inputPlaceholder string
 }
 
 // defaultAppConfig returns the default configuration with Dracula theme
@@ -177,6 +181,54 @@ type Suggestions = shell.Suggestions
 // NewSuggestions creates a new suggestions component.
 func NewSuggestions() *Suggestions {
 	return shell.NewSuggestions()
+}
+
+// Config is a re-export of config.Config for API convenience.
+type Config = config.Config
+
+// LoadConfig loads UI configuration for the given app name.
+// It checks locations in order: env var ($APPNAME_UI_CONFIG), XDG config
+// (~/.config/appname/ui.toml), legacy rc file (~/.appnamerc).
+// Returns default config merged with user overrides.
+func LoadConfig(appName string) (*Config, error) {
+	return config.Load(appName)
+}
+
+// DefaultConfig returns the default configuration.
+func DefaultConfig() *Config {
+	return config.Default()
+}
+
+// Note: Config.BuildTheme() is available via the type alias to config.Config
+
+// WithConfig applies all settings from a loaded Config.
+// This is the recommended way to apply user configuration.
+func WithConfig(cfg *Config) Option {
+	return func(c *appConfig) {
+		// Apply theme from config
+		c.theme = cfg.BuildTheme()
+		// Apply input config
+		if cfg.Input.Prefix != "" {
+			c.inputPrefix = cfg.Input.Prefix
+		}
+		if cfg.Input.Placeholder != "" {
+			c.inputPlaceholder = cfg.Input.Placeholder
+		}
+	}
+}
+
+// WithInputPrefix sets the prefix shown before user input (e.g., "> ").
+func WithInputPrefix(prefix string) Option {
+	return func(c *appConfig) {
+		c.inputPrefix = prefix
+	}
+}
+
+// WithInputPlaceholder sets the placeholder text shown when input is empty.
+func WithInputPlaceholder(placeholder string) Option {
+	return func(c *appConfig) {
+		c.inputPlaceholder = placeholder
+	}
 }
 
 // NewAutocomplete creates a new autocomplete component.
@@ -271,6 +323,14 @@ func New(agent Agent, opts ...Option) *App {
 	}
 
 	shellCfg := shell.DefaultConfig()
+
+	// Apply input config from options
+	if cfg.inputPrefix != "" {
+		shellCfg.InputPrefix = cfg.inputPrefix
+	}
+	if cfg.inputPlaceholder != "" {
+		shellCfg.InputPlaceholder = cfg.inputPlaceholder
+	}
 
 	// Create content
 	chat := NewChatContent(cfg.theme)
