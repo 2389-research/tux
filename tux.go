@@ -245,6 +245,9 @@ func (a *App) submitInput(prompt string) {
 	// Subscribe to events
 	events := a.agent.Subscribe()
 
+	// Start streaming display
+	a.shell.Streaming().Start()
+
 	// Run agent in goroutine
 	go func() {
 		// Start event processing
@@ -271,18 +274,24 @@ func (a *App) processEvents(events <-chan Event) {
 // processEvent routes an agent event to the appropriate content.
 // This is called for each event received from the agent's event channel.
 func (a *App) processEvent(event Event) {
+	streaming := a.shell.Streaming()
+
 	switch event.Type {
 	case EventText:
 		a.chat.AppendText(event.Text)
+		streaming.AppendToken(event.Text)
 
 	case EventToolCall:
 		a.tools.AddToolCall(event.ToolID, event.ToolName, event.ToolParams)
+		streaming.StartToolCall(event.ToolID, event.ToolName)
 
 	case EventToolResult:
 		a.tools.AddToolResult(event.ToolID, event.ToolOutput, event.Success)
+		streaming.EndToolCall(event.ToolID)
 
 	case EventComplete:
 		a.chat.FinishAssistantMessage()
+		streaming.End()
 		a.mu.Lock()
 		// Clear errors only if no errors in this run
 		if !a.errorsInRun {
