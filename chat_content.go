@@ -140,3 +140,22 @@ func (c *ChatContent) UserMessages() []string {
 	}
 	return result
 }
+
+// Clear removes all messages and resets the current streaming state.
+func (c *ChatContent) Clear() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.messages = make([]chatMessage, 0)
+	c.current.Reset()
+}
+
+// AddAssistantMessage adds a completed assistant message to the conversation.
+// Use this when restoring a previous session, not for streaming.
+func (c *ChatContent) AddAssistantMessage(content string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.messages = append(c.messages, chatMessage{
+		role:    "assistant",
+		content: content,
+	})
+}

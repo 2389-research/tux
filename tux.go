@@ -358,3 +358,21 @@ func (a *App) isRunning() bool {
 
 	return a.ctx != nil && a.ctx.Err() == nil
 }
+
+// ClearChat clears all messages from the chat display.
+// Use this when starting a new session or before loading a different session.
+func (a *App) ClearChat() {
+	a.chat.Clear()
+}
+
+// AddChatUserMessage adds a user message to the chat display.
+// Use this when restoring a previous session.
+func (a *App) AddChatUserMessage(content string) {
+	a.chat.AddUserMessage(content)
+}
+
+// AddChatAssistantMessage adds an assistant message to the chat display.
+// Use this when restoring a previous session.
+func (a *App) AddChatAssistantMessage(content string) {
+	a.chat.AddAssistantMessage(content)
+}
