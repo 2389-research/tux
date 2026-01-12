@@ -150,6 +150,18 @@ func (s *Shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				s.config.OnShowErrors()
 			}
 			return s, nil
+		case "esc":
+			// Toggle focus between input and tab content (when no modal active)
+			if !s.modalManager.HasActive() {
+				if s.focused == FocusInput {
+					s.focused = FocusTab
+					s.input.Blur()
+				} else if s.focused == FocusTab {
+					s.focused = FocusInput
+					return s, s.input.Focus()
+				}
+				return s, nil
+			}
 		}
 
 		// Tab index shortcuts (Alt+1 through Alt+9)
@@ -311,6 +323,11 @@ func (s *Shell) HasModal() bool {
 // Focus sets the focus target.
 func (s *Shell) Focus(target FocusTarget) {
 	s.focused = target
+}
+
+// Focused returns the current focus target.
+func (s *Shell) Focused() FocusTarget {
+	return s.focused
 }
 
 // InputValue returns the current input text.
