@@ -86,9 +86,10 @@ type Option func(*appConfig)
 
 // appConfig holds configuration for the App.
 type appConfig struct {
-	theme       theme.Theme
-	customTabs  []TabDef
-	removedTabs map[string]bool
+	theme          theme.Theme
+	customTabs     []TabDef
+	removedTabs    map[string]bool
+	helpCategories []shell.Category
 }
 
 // defaultAppConfig returns the default configuration with Dracula theme
@@ -118,6 +119,20 @@ func WithTab(tab TabDef) Option {
 func WithoutTab(id string) Option {
 	return func(c *appConfig) {
 		c.removedTabs[id] = true
+	}
+}
+
+// HelpCategory is a re-export of shell.Category for API convenience.
+type HelpCategory = shell.Category
+
+// HelpBinding is a re-export of shell.Binding for API convenience.
+type HelpBinding = shell.Binding
+
+// WithHelpCategories sets the help overlay categories.
+// When set, pressing '?' shows the help overlay with these keybindings.
+func WithHelpCategories(categories ...HelpCategory) Option {
+	return func(c *appConfig) {
+		c.helpCategories = categories
 	}
 }
 
@@ -188,6 +203,9 @@ func New(agent Agent, opts ...Option) *App {
 			app.shell.PushModal(modal)
 		}
 	}
+
+	// Wire help categories
+	shellCfg.HelpCategories = cfg.helpCategories
 
 	sh := shell.New(cfg.theme, shellCfg)
 	app.shell = sh

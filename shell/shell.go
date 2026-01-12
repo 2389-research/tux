@@ -54,6 +54,9 @@ type Config struct {
 	OnShowErrors func()
 	// HistoryProvider returns the list of historical inputs (oldest to newest).
 	HistoryProvider func() []string
+	// HelpCategories defines the keybinding categories shown in the help overlay.
+	// If nil, the help overlay (?) is disabled.
+	HelpCategories []Category
 }
 
 // DefaultConfig returns the default shell configuration.
@@ -160,6 +163,17 @@ func (s *Shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					s.focused = FocusInput
 					return s, s.input.Focus()
 				}
+				return s, nil
+			}
+		case "?":
+			// Show help overlay if categories are configured
+			if len(s.config.HelpCategories) > 0 && !s.modalManager.HasActive() {
+				help := NewHelp(s.config.HelpCategories...)
+				modal := NewHelpModal(HelpModalConfig{
+					Help:  help,
+					Theme: s.theme,
+				})
+				s.PushModal(modal)
 				return s, nil
 			}
 		}
