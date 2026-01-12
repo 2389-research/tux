@@ -138,7 +138,10 @@ func (t *TabBar) HandleKey(msg tea.KeyMsg) tea.Cmd {
 
 	// Pass to active content
 	if tab := t.ActiveTab(); tab != nil && tab.Content != nil {
-		tab.Content.Update(msg)
+		_, cmd := tab.Content.Update(msg)
+		if cmd != nil {
+			cmds = append(cmds, cmd)
+		}
 	}
 
 	return tea.Batch(cmds...)
