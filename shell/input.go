@@ -18,6 +18,9 @@ type Input struct {
 
 	// Autocomplete
 	autocomplete *Autocomplete
+
+	// Suggestions
+	suggestions *Suggestions
 }
 
 // NewInput creates a new input component.
@@ -149,10 +152,28 @@ func (i *Input) Update(msg tea.Msg) (*Input, tea.Cmd) {
 				i.autocomplete.Hide()
 			}
 		}
+
+		// Accept suggestion with Ctrl+Right
+		if msg.String() == "ctrl+right" {
+			if i.suggestions != nil && i.suggestions.Active() {
+				if top := i.suggestions.Top(); top != nil {
+					i.model.SetValue(top.Action)
+					i.model.CursorEnd()
+					i.suggestions.Hide()
+					return i, nil
+				}
+			}
+		}
 	}
 
 	var cmd tea.Cmd
 	i.model, cmd = i.model.Update(msg)
+
+	// Update suggestions after input changes
+	if i.suggestions != nil {
+		i.suggestions.Update(i.model.Value())
+	}
+
 	return i, cmd
 }
 
@@ -161,11 +182,19 @@ func (i *Input) View() string {
 	styles := i.theme.Styles()
 	inputView := styles.Input.Width(i.width - 4).Render(i.model.View())
 
-	// Show autocomplete dropdown if active
+	// Show autocomplete dropdown if active (takes priority)
 	if i.autocomplete != nil && i.autocomplete.Active() {
 		acView := i.autocomplete.View()
 		if acView != "" {
 			return inputView + "\n" + acView
+		}
+	}
+
+	// Show suggestions if active (and autocomplete not showing)
+	if i.suggestions != nil && i.suggestions.Active() {
+		sugView := i.suggestions.View()
+		if sugView != "" {
+			return inputView + "\n" + sugView
 		}
 	}
 
@@ -203,6 +232,17 @@ func (i *Input) SetAutocomplete(ac *Autocomplete) {
 // Autocomplete returns the autocomplete component, if set.
 func (i *Input) Autocomplete() *Autocomplete {
 	return i.autocomplete
+}
+
+// SetSuggestions sets the suggestions component for this input.
+// When set, suggestions are analyzed on each input change.
+func (i *Input) SetSuggestions(s *Suggestions) {
+	i.suggestions = s
+}
+
+// Suggestions returns the suggestions component, if set.
+func (i *Input) Suggestions() *Suggestions {
+	return i.suggestions
 }
 
 // Focus focuses the input.

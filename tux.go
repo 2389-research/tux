@@ -91,6 +91,7 @@ type appConfig struct {
 	removedTabs    map[string]bool
 	helpCategories []shell.Category
 	autocomplete   *shell.Autocomplete
+	suggestions    *shell.Suggestions
 	onQuickActions func()
 }
 
@@ -161,6 +162,20 @@ func NewListModal(cfg ListModalConfig) *ListModal {
 	return shell.NewListModal(cfg)
 }
 
+// Suggestion is a re-export of shell.Suggestion for API convenience.
+type Suggestion = shell.Suggestion
+
+// SuggestionProvider is a re-export of shell.SuggestionProvider for API convenience.
+type SuggestionProvider = shell.SuggestionProvider
+
+// Suggestions is a re-export of shell.Suggestions for API convenience.
+type Suggestions = shell.Suggestions
+
+// NewSuggestions creates a new suggestions component.
+func NewSuggestions() *Suggestions {
+	return shell.NewSuggestions()
+}
+
 // NewAutocomplete creates a new autocomplete component.
 func NewAutocomplete() *Autocomplete {
 	return shell.NewAutocomplete()
@@ -189,6 +204,14 @@ func WithAutocomplete(ac *Autocomplete) Option {
 func WithQuickActions(fn func()) Option {
 	return func(c *appConfig) {
 		c.onQuickActions = fn
+	}
+}
+
+// WithSuggestions sets the suggestions component for the input.
+// When set, suggestions are analyzed on each input change.
+func WithSuggestions(s *Suggestions) Option {
+	return func(c *appConfig) {
+		c.suggestions = s
 	}
 }
 
@@ -265,6 +288,9 @@ func New(agent Agent, opts ...Option) *App {
 
 	// Wire autocomplete
 	shellCfg.Autocomplete = cfg.autocomplete
+
+	// Wire suggestions
+	shellCfg.Suggestions = cfg.suggestions
 
 	// Wire quick actions
 	shellCfg.OnQuickActions = cfg.onQuickActions

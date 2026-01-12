@@ -63,6 +63,9 @@ type Config struct {
 	// Autocomplete is the autocomplete component for the input.
 	// If set, Tab triggers completion suggestions.
 	Autocomplete *Autocomplete
+	// Suggestions is the suggestions component for the input.
+	// If set, suggestions are analyzed on each input change.
+	Suggestions *Suggestions
 }
 
 // DefaultConfig returns the default shell configuration.
@@ -114,6 +117,11 @@ func New(th theme.Theme, cfg Config) *Shell {
 	// Wire autocomplete to input
 	if cfg.Autocomplete != nil {
 		s.input.SetAutocomplete(cfg.Autocomplete)
+	}
+
+	// Wire suggestions to input
+	if cfg.Suggestions != nil {
+		s.input.SetSuggestions(cfg.Suggestions)
 	}
 
 	return s
