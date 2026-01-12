@@ -207,6 +207,17 @@ func (s *Shell) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case RefreshMsg:
 		// Just triggers re-render - state already updated externally
+
+	default:
+		// Pass unknown messages to active tab content
+		// This allows custom content to receive their own message types
+		// (e.g., sessionsLoadedMsg for history content)
+		if tab := s.tabs.ActiveTab(); tab != nil && tab.Content != nil {
+			_, cmd := tab.Content.Update(msg)
+			if cmd != nil {
+				cmds = append(cmds, cmd)
+			}
+		}
 	}
 
 	return s, tea.Batch(cmds...)
